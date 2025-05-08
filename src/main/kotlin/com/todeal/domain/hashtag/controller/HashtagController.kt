@@ -22,4 +22,12 @@ class HashtagController(
         val result = hashtagService.findByName(name)
         return ApiResponse.success(result)
     }
+
+    @GetMapping("/popular/week")
+    fun getWeeklyPopularHashtags(
+        @RequestParam(defaultValue = "10") limit: Int
+    ): ApiResponse<List<String>> {
+        val result = hashtagService.getWeeklyPopularHashtags(limit)
+        return ApiResponse.success(result)
+    }
 }

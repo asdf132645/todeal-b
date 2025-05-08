@@ -1,3 +1,4 @@
+// ✅ DealRepository.kt
 package com.todeal.domain.deal.repository
 
 import com.todeal.domain.deal.entity.DealEntity

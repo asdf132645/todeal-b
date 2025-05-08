@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/push-notifications")
 class PushNotificationLogController(
     private val service: PushNotificationLogService
 ) {

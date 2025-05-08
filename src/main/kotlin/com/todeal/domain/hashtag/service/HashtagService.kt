@@ -15,4 +15,9 @@ class HashtagService(
     fun findByName(name: String): HashtagDto? {
         return hashtagRepository.findByName(name)?.let { HashtagDto.from(it) }
     }
+
+    fun getWeeklyPopularHashtags(limit: Int): List<String> {
+        return hashtagRepository.findWeeklyPopularHashtags(limit)
+    }
+
 }

@@ -8,5 +8,7 @@ data class DealRequest(
     val type: String,
     val startPrice: Int,
     val deadline: LocalDateTime,
-    val images: List<String>
+    val images: List<String>,
+    val latitude: Double,     // ← 위치 추가
+    val longitude: Double     // ← 위치 추가
 )
