@@ -1,31 +1,37 @@
-// service/NotificationService.kt
 package com.todeal.domain.notification.service
 
-import com.todeal.domain.notification.dto.*
+import com.todeal.domain.notification.dto.NotificationDto
+import com.todeal.domain.notification.dto.NotificationResponse
 import com.todeal.domain.notification.entity.NotificationEntity
 import com.todeal.domain.notification.repository.NotificationRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class NotificationService(
     private val notificationRepository: NotificationRepository
 ) {
-    fun create(request: NotificationDto): NotificationDto {
+
+    @Transactional
+    fun createNotification(dto: NotificationDto): NotificationResponse {
         val entity = NotificationEntity(
-            userId = request.userId,
-            title = request.title,
-            body = request.body
+            userId = dto.userId,
+            title = dto.title,
+            body = dto.body
         )
-        return NotificationDto.from(notificationRepository.save(entity))
+        return NotificationResponse.fromEntity(notificationRepository.save(entity))
     }
 
-    fun getByUser(userId: Long): List<NotificationDto> {
-        return notificationRepository.findAllByUserId(userId).map { NotificationDto.from(it) }
+    @Transactional(readOnly = true)
+    fun getUserNotifications(userId: Long): List<NotificationResponse> {
+        return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+            .map { NotificationResponse.fromEntity(it) }
     }
 
-    fun markAsRead(id: Long): NotificationDto {
-        val notification = notificationRepository.findById(id).orElseThrow()
-        val updated = notification.copy(isRead = true)
-        return NotificationDto.from(notificationRepository.save(updated))
+    @Transactional
+    fun markAsRead(id: Long) {
+        val noti = notificationRepository.findById(id).orElseThrow { RuntimeException("알림이 존재하지 않습니다") }
+        noti.isRead = true
+        notificationRepository.save(noti)
     }
 }

@@ -1,7 +1,5 @@
 package com.todeal.domain.deal.repository
 
-// ✅ DealQueryRepository.kt
-
 import com.todeal.domain.deal.entity.DealEntity
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
@@ -23,34 +21,45 @@ class DealQueryRepository {
         lng: Double?
     ): List<DealEntity> {
         val sb = StringBuilder()
-        sb.append("SELECT d.* FROM deals d ")
+        sb.append("SELECT d FROM DealEntity d ")
 
+        // 해시태그 필터가 있을 경우 JOIN
         if (!hashtags.isNullOrEmpty()) {
-            sb.append("JOIN deal_hashtags h ON d.id = h.deal_id ")
+            sb.append("JOIN d.hashtags h ")
         }
 
-        sb.append("WHERE d.deadline > now() ")
+        sb.append("WHERE d.deadline > CURRENT_TIMESTAMP ")
 
         if (!type.isNullOrBlank()) {
             sb.append("AND d.type = :type ")
         }
 
         if (!hashtags.isNullOrEmpty()) {
-            sb.append("AND h.hashtag IN :hashtags ")
+            sb.append("AND h.name IN :hashtags ")
         }
 
-        if (sort == "distance" && lat != null && lng != null) {
-            sb.append("ORDER BY (")
-            sb.append("6371 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * ")
-            sb.append("cos(radians(d.longitude) - radians(:lng)) + ")
-            sb.append("sin(radians(:lat)) * sin(radians(d.latitude)))")
-            sb.append(" ASC ")
-        } else {
-            sb.append("ORDER BY d.created_at DESC ")
+        // 정렬 기준
+        when {
+            sort == "distance" && lat != null && lng != null -> {
+                sb.append(
+                    "ORDER BY " +
+                            "(6371 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * " +
+                            "cos(radians(d.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(d.latitude))))"
+                )
+            }
+
+            sort == "deadline" -> {
+                sb.append("ORDER BY d.deadline ASC ")
+            }
+
+            else -> {
+                sb.append("ORDER BY d.createdAt DESC ")
+            }
         }
 
-        val query = em.createNativeQuery(sb.toString(), DealEntity::class.java)
+        val query = em.createQuery(sb.toString(), DealEntity::class.java)
 
+        // 파라미터 바인딩
         if (!type.isNullOrBlank()) query.setParameter("type", type)
         if (!hashtags.isNullOrEmpty()) query.setParameter("hashtags", hashtags)
         if (sort == "distance" && lat != null && lng != null) {
@@ -61,6 +70,6 @@ class DealQueryRepository {
         query.firstResult = page * size
         query.maxResults = size
 
-        return query.resultList as List<DealEntity>
+        return query.resultList
     }
 }

@@ -21,6 +21,9 @@ repositories {
 }
 
 dependencies {
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.22.0")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("com.google.firebase:firebase-admin:9.2.0") // 버전은 필요 시 최신으로
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

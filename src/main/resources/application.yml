@@ -20,11 +20,17 @@ spring:
       hibernate:
         format_sql: true
 
-  redis:
-    host: localhost
-    port: 6379
+  spring:
+    redis:
+      host: localhost
+      port: 6379
+
 
 logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+firebase:
+  credentials:
+    path: firebase-adminsdk.json

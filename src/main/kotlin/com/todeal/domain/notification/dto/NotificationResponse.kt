@@ -1,4 +1,3 @@
-// dto/NotificationResponse.kt
 package com.todeal.domain.notification.dto
 
 import com.todeal.domain.notification.entity.NotificationEntity
@@ -12,12 +11,14 @@ data class NotificationResponse(
     val createdAt: LocalDateTime
 ) {
     companion object {
-        fun from(entity: NotificationEntity) = NotificationResponse(
-            id = entity.id,
-            title = entity.title,
-            body = entity.body,
-            isRead = entity.isRead,
-            createdAt = entity.createdAt
-        )
+        fun fromEntity(entity: NotificationEntity): NotificationResponse {
+            return NotificationResponse(
+                id = entity.id,
+                title = entity.title,
+                body = entity.body,
+                isRead = entity.isRead,
+                createdAt = entity.createdAt
+            )
+        }
     }
 }

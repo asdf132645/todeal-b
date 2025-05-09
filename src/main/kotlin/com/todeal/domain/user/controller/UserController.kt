@@ -3,12 +3,14 @@ package com.todeal.domain.user.controller
 import com.todeal.domain.user.dto.*
 import com.todeal.domain.user.service.UserService
 import com.todeal.global.response.ApiResponse
+import com.todeal.infrastructure.redis.RedisFcmTokenService
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/users")
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
+    private val redisFcmTokenService: RedisFcmTokenService // ✅ Redis 주입 추가
 ) {
 
     @PostMapping("/signup")
@@ -34,4 +36,29 @@ class UserController(
         val result = userService.getById(id)
         return ApiResponse.success(result)
     }
+
+    // ✅ FCM 토큰 등록 API
+    @PatchMapping("/me/fcm-token")
+    fun updateFcmToken(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestBody body: Map<String, String>
+    ): ApiResponse<out String> {
+        val token = body["fcmToken"]
+        if (token.isNullOrBlank()) {
+            return ApiResponse.fail("토큰 누락") // ✅ 반드시 <String> 명시
+        }
+
+        redisFcmTokenService.saveToken(userId, token)
+        return ApiResponse.success("토큰 등록 완료")
+    }
+
+
+    @DeleteMapping("/me/fcm-token")
+    fun deleteFcmToken(
+        @RequestHeader("X-USER-ID") userId: Long
+    ): ApiResponse<String> {
+        redisFcmTokenService.deleteToken(userId)
+        return ApiResponse.success("토큰 삭제 완료")
+    }
+
 }

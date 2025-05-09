@@ -1,7 +1,7 @@
 // ✅ NearbyDealController.kt
 package com.todeal.domain.nearby.controller
 
-import com.todeal.domain.deal.entity.toResponse
+import com.todeal.domain.deal.mapper.toResponse
 import com.todeal.domain.nearby.service.NearbyDealService
 import com.todeal.domain.userlocation.UserLocationService
 import com.todeal.global.response.ApiResponse

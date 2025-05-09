@@ -1,28 +1,30 @@
-// controller/NotificationController.kt
 package com.todeal.domain.notification.controller
 
-import com.todeal.domain.notification.dto.*
-import com.todeal.domain.notification.service.NotificationService
 import com.todeal.global.response.ApiResponse
+import com.todeal.domain.notification.dto.NotificationDto
+import com.todeal.domain.notification.dto.NotificationResponse
+import com.todeal.domain.notification.service.NotificationService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/notifications")
 class NotificationController(
     private val notificationService: NotificationService
 ) {
+
     @PostMapping
-    fun create(@RequestBody request: NotificationDto): ApiResponse<NotificationDto> {
-        return ApiResponse.success(notificationService.create(request))
+    fun createNotification(@RequestBody dto: NotificationDto): ApiResponse<NotificationResponse> {
+        return ApiResponse.success(notificationService.createNotification(dto))
     }
 
-    @GetMapping("/user/{userId}")
-    fun getByUser(@PathVariable userId: Long): ApiResponse<List<NotificationDto>> {
-        return ApiResponse.success(notificationService.getByUser(userId))
+    @GetMapping
+    fun getNotifications(@RequestHeader("X-USER-ID") userId: Long): ApiResponse<List<NotificationResponse>> {
+        return ApiResponse.success(notificationService.getUserNotifications(userId))
     }
 
-    @PutMapping("/{id}/read")
-    fun markAsRead(@PathVariable id: Long): ApiResponse<NotificationDto> {
-        return ApiResponse.success(notificationService.markAsRead(id))
+    @PatchMapping("/{id}/read")
+    fun markAsRead(@PathVariable id: Long): ApiResponse<String> {
+        notificationService.markAsRead(id)
+        return ApiResponse.success("읽음 처리 완료")
     }
 }

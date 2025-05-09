@@ -1,18 +1,20 @@
-// PushNotificationLogController.kt
 package com.todeal.domain.pushNotificationLog.controller
 
-import com.todeal.domain.pushNotificationLog.dto.PushNotificationLogResponse
-import com.todeal.domain.pushNotificationLog.service.PushNotificationLogService
 import com.todeal.global.response.ApiResponse
+import com.todeal.domain.pushNotificationLog.dto.PushNotificationLogResponse
+import com.todeal.domain.pushNotificationLog.repository.PushNotificationLogRepository
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/push-notifications")
+@RequestMapping("/admin/push-logs")
 class PushNotificationLogController(
-    private val service: PushNotificationLogService
+    private val repository: PushNotificationLogRepository
 ) {
-    @GetMapping("/user/{userId}")
-    fun getNotifications(@PathVariable userId: Long): ApiResponse<List<PushNotificationLogResponse>> {
-        return ApiResponse.success(service.getUserNotifications(userId))
+
+    @GetMapping("/{userId}")
+    fun getUserLogs(@PathVariable userId: Long): ApiResponse<List<PushNotificationLogResponse>> {
+        val result = repository.findAllByUserIdOrderByCreatedAtDesc(userId)
+            .map { PushNotificationLogResponse.fromEntity(it) }
+        return ApiResponse.success(result)
     }
 }
