@@ -13,7 +13,6 @@ import com.todeal.domain.deal.repository.getByIdOrThrow
 class DealController(
     private val dealService: DealService,
     private val dealRepository: DealRepository
-
 ) {
 
     /** 🔥 딜 생성 시 사용자 ID도 함께 전달 */
@@ -26,11 +25,25 @@ class DealController(
         return ApiResponse.success(result)
     }
 
+    /** 딜 삭제 (거래종료 처리) */
+    @DeleteMapping("/{id}")
+    fun deleteDeal(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @PathVariable id: Long
+    ): ApiResponse<Unit> {
+        dealService.deleteDealWithChats(userId, id)
+        return ApiResponse.success(Unit)  // Unit을 넘겨서 성공 처리
+    }
+
+
+    /** 딜 상세 조회 */
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Long): ApiResponse<Map<String, Any>> {
         val deal = dealRepository.getByIdOrThrow(id)
         return ApiResponse.success(deal.toResponse()) // ✅ 여기!
     }
+
+    /** 필터링된 딜 목록 조회 */
     @GetMapping
     fun getFilteredDeals(
         @RequestParam type: String?,
@@ -45,6 +58,7 @@ class DealController(
         return ApiResponse.success(result.map { it.toResponse() })
     }
 
+    /** 제목과 타입을 기반으로 딜 검색 */
     @GetMapping("/search")
     fun searchDeals(
         @RequestParam type: String,

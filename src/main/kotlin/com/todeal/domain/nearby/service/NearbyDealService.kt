@@ -13,7 +13,7 @@ class NearbyDealService(
         lat: Double,
         lng: Double,
         type: String? = null,
-        radius: Double = 5.0
+        radius: Double = 10.0
     ): List<DealEntity> {
         return if (!type.isNullOrBlank()) {
             nearbyDealQueryRepository.findWithinDistanceAndType(lat, lng, radius, type)

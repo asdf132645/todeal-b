@@ -33,58 +33,57 @@ class FirebasePushSender(
     }
 
     override fun sendPush(userId: Long, title: String, body: String) {
+        sendPush(userId, title, body, emptyMap())
+    }
+
+    fun sendPush(userId: Long, title: String, body: String, data: Map<String, String>) {
         val fcmToken = redisFcmTokenService.getToken(userId)
 
         if (fcmToken == null) {
-            println("⚠️ FCM 토큰 없음: userId = $userId")
-            pushNotificationLogService.save(
-                PushNotificationLogDto(
-                    userId = userId,
-                    title = title,
-                    body = body,
-                    fcmToken = "N/A",
-                    isSuccess = false,
-                    responseMessage = "FCM 토큰 없음"
-                )
-            )
+            logFailure(userId, title, body, "N/A", "FCM 토큰 없음")
             return
         }
 
         val message = Message.builder()
             .setToken(fcmToken)
-            .setNotification(
-                Notification.builder().setTitle(title).setBody(body).build()
-            )
+            .setNotification(Notification.builder().setTitle(title).setBody(body).build())
+            .putAllData(data)
             .build()
 
         try {
             val response = FirebaseMessaging.getInstance().send(message)
             println("📨 FCM 전송 성공: $response")
-
-            pushNotificationLogService.save(
-                PushNotificationLogDto(
-                    userId = userId,
-                    title = title,
-                    body = body,
-                    fcmToken = fcmToken,
-                    isSuccess = true,
-                    responseMessage = response
-                )
-            )
+            logSuccess(userId, title, body, fcmToken, response)
 
         } catch (e: Exception) {
             println("❌ FCM 전송 실패: ${e.message}")
-
-            pushNotificationLogService.save(
-                PushNotificationLogDto(
-                    userId = userId,
-                    title = title,
-                    body = body,
-                    fcmToken = fcmToken,
-                    isSuccess = false,
-                    responseMessage = e.message ?: "Unknown error"
-                )
-            )
+            logFailure(userId, title, body, fcmToken, e.message ?: "Unknown error")
         }
+    }
+
+    private fun logSuccess(userId: Long, title: String, body: String, token: String, response: String) {
+        pushNotificationLogService.save(
+            PushNotificationLogDto(
+                userId = userId,
+                title = title,
+                body = body,
+                fcmToken = token,
+                isSuccess = true,
+                responseMessage = response
+            )
+        )
+    }
+
+    private fun logFailure(userId: Long, title: String, body: String, token: String, error: String) {
+        pushNotificationLogService.save(
+            PushNotificationLogDto(
+                userId = userId,
+                title = title,
+                body = body,
+                fcmToken = token,
+                isSuccess = false,
+                responseMessage = error
+            )
+        )
     }
 }

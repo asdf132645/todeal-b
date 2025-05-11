@@ -18,7 +18,7 @@ class NearbyDealController(
     fun getNearbyDealsByUserId(
         @RequestHeader("X-USER-ID") userId: Long,
         @RequestParam(required = false) type: String?,
-        @RequestParam(required = false, defaultValue = "2.0") radius: Double // 🔥 radius 추가됨
+        @RequestParam(required = false, defaultValue = "10.0") radius: Double // 🔥 radius 추가됨
     ): ApiResponse<List<Map<String, Any>>> {
         val location = userLocationService.getUserLocation(userId)
         val deals = nearbyDealService.getNearbyDeals(

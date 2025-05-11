@@ -44,4 +44,15 @@ class BidController(
         return ApiResponse.success(result)
     }
 
+    @PatchMapping("/{dealId}/cancel-winner")
+    fun cancelWinner(@PathVariable dealId: Long): ApiResponse<String> {
+        bidService.cancelWinner(dealId)
+        return ApiResponse.success("낙찰자 취소 완료")
+    }
+
+    @DeleteMapping("/{bidId}")
+    fun cancelBid(@PathVariable bidId: Long): ApiResponse<String> {
+        bidService.cancelBid(bidId)
+        return ApiResponse.success("입찰 취소 완료")
+    }
 }

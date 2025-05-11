@@ -30,7 +30,7 @@ class SecurityConfig {
         val config = CorsConfiguration()
         config.allowCredentials = true
         config.allowedOrigins = listOf("http://localhost:3000") // 👉 프론트 허용
-        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedMethods = listOf("GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS")
         config.allowedHeaders = listOf("*")
 
         val source = UrlBasedCorsConfigurationSource()

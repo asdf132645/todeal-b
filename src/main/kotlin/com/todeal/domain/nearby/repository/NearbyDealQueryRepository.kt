@@ -14,8 +14,8 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
             SELECT * FROM (
                 SELECT d.*, (
                     6371 * acos(
-                        cos(radians(:lat)) * cos(radians(d.latitude)) *
-                        cos(radians(d.longitude) - radians(:lng)) +
+                        cos(radians(:lat)) * cos(radians(d.latitude)) * 
+                        cos(radians(d.longitude) - radians(:lng)) + 
                         sin(radians(:lat)) * sin(radians(d.latitude))
                     )
                 ) AS distance
@@ -24,7 +24,7 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
             ) AS sub
             WHERE distance < :radius
             ORDER BY sub.created_at DESC
-            LIMIT 4
+            LIMIT 10
         """,
         nativeQuery = true
     )
@@ -39,8 +39,8 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
             SELECT * FROM (
                 SELECT d.*, (
                     6371 * acos(
-                        cos(radians(:lat)) * cos(radians(d.latitude)) *
-                        cos(radians(d.longitude) - radians(:lng)) +
+                        cos(radians(:lat)) * cos(radians(d.latitude)) * 
+                        cos(radians(d.longitude) - radians(:lng)) + 
                         sin(radians(:lat)) * sin(radians(d.latitude))
                     )
                 ) AS distance
@@ -49,7 +49,7 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
             ) AS sub
             WHERE distance < :radius
             ORDER BY sub.created_at DESC
-            LIMIT 4
+            LIMIT 10
         """,
         nativeQuery = true
     )
