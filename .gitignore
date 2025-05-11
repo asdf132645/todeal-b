@@ -41,3 +41,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### 🔒 Firebase credentials (secret key)
+src/test/resources/firebase-adminsdk.json
