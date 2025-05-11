@@ -41,4 +41,5 @@ interface DealRepository : JpaRepository<DealEntity, Long> {
 
     // ✅ 여러 dealId로 한 번에 조회
     fun findByIdIn(ids: Set<Long>): List<DealEntity>
+
 }

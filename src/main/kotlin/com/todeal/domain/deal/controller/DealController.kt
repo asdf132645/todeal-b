@@ -58,6 +58,12 @@ class DealController(
         return ApiResponse.success(result.map { it.toResponse() })
     }
 
+    @GetMapping("/mine")
+    fun getMyDeals(@RequestHeader("X-USER-ID") userId: Long): ApiResponse<List<DealResponse>> {
+        val deals = dealService.getDealsByUserId(userId)
+        return ApiResponse.success(deals)
+    }
+
     /** 제목과 타입을 기반으로 딜 검색 */
     @GetMapping("/search")
     fun searchDeals(

@@ -87,4 +87,10 @@ class DealService(
         // 딜 삭제
         dealRepository.delete(deal)
     }
+
+    fun getDealsByUserId(userId: Long): List<DealResponse> {
+        val results = dealRepository.findByUserId(userId)
+        return results.map { it.toDto() } // ✅ 이게 맞는 타입
+    }
+
 }
