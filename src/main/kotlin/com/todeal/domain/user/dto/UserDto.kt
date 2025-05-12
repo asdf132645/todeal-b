@@ -5,24 +5,24 @@ import java.time.LocalDateTime
 
 data class UserDto(
     val id: Long,
-    val email: String,
+    val email: String?,
+    val kakaoId: Long?,
     val nickname: String,
+    val phone: String?,
     val profileImageUrl: String?,
     val role: String,
     val isPremium: Boolean,
     val planExpireAt: LocalDateTime?
-) {
-    companion object {
-        fun from(entity: UserEntity): UserDto {
-            return UserDto(
-                id = entity.id,
-                email = entity.email,
-                nickname = entity.nickname,
-                profileImageUrl = entity.profileImageUrl,
-                role = entity.role,
-                isPremium = entity.isPremium,
-                planExpireAt = entity.planExpireAt
-            )
-        }
-    }
-}
+)
+
+fun UserEntity.toDto() = UserDto(
+    id = id,
+    email = email,
+    kakaoId = kakaoId,
+    nickname = nickname,
+    phone = phone,
+    profileImageUrl = profileImageUrl,
+    role = role,
+    isPremium = isPremium,
+    planExpireAt = planExpireAt
+)

@@ -5,12 +5,14 @@ import com.todeal.domain.user.service.UserService
 import com.todeal.global.response.ApiResponse
 import com.todeal.infrastructure.redis.RedisFcmTokenService
 import org.springframework.web.bind.annotation.*
+import com.todeal.domain.auth.JwtProvider
 
 @RestController
 @RequestMapping("/api/users")
 class UserController(
     private val userService: UserService,
-    private val redisFcmTokenService: RedisFcmTokenService // ✅ Redis 주입 추가
+    private val redisFcmTokenService: RedisFcmTokenService,
+    private val jwtProvider: JwtProvider
 ) {
 
     @PostMapping("/signup")
@@ -20,10 +22,11 @@ class UserController(
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: UserLoginRequest): ApiResponse<UserResponse> {
+    fun login(@RequestBody request: UserLoginRequest): ApiResponse<LoginResponse> {
         val result = userService.login(request)
         return ApiResponse.success(result)
     }
+
 
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody request: UserUpdateRequest): ApiResponse<UserResponse> {
@@ -52,7 +55,6 @@ class UserController(
         return ApiResponse.success("토큰 등록 완료")
     }
 
-
     @DeleteMapping("/me/fcm-token")
     fun deleteFcmToken(
         @RequestHeader("X-USER-ID") userId: Long
@@ -61,4 +63,11 @@ class UserController(
         return ApiResponse.success("토큰 삭제 완료")
     }
 
+    @GetMapping("/me")
+    fun getMyInfo(@RequestHeader("Authorization") bearer: String): ApiResponse<UserResponse> {
+        val token = bearer.removePrefix("Bearer ").trim()
+        val userId = jwtProvider.getUserIdFromToken(token)
+        val result = userService.getById(userId)
+        return ApiResponse.success(result)
+    }
 }

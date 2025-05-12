@@ -21,6 +21,10 @@ repositories {
 }
 
 dependencies {
+    implementation("org.json:json:20231013") // ✅ 최신 안정 버전
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
+    implementation("io.jsonwebtoken:jjwt-jackson:0.11.5") // or :jjwt-gson
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.22.0")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

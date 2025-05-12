@@ -10,15 +10,19 @@ data class UserEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(nullable = false, unique = true)
-    val email: String,
+    @Column(nullable = true, unique = true)
+    val kakaoId: Long? = null,  // 카카오 전용
+
+    @Column(nullable = true, unique = true)
+    val email: String? = null,  // 일반 로그인 전용
+
+    @Column(nullable = true)
+    val password: String? = null,  // 일반 로그인 전용 (BCrypt 해시 저장)
 
     @Column(nullable = false)
     val nickname: String,
 
-    @Column(nullable = false)
-    val password: String,
-
+    val phone: String? = null,
     val profileImageUrl: String? = null,
 
     @Column(nullable = false)
@@ -27,5 +31,14 @@ data class UserEntity(
     @Column(nullable = false)
     val isPremium: Boolean = false,
 
-    val planExpireAt: LocalDateTime? = null
+    val planExpireAt: LocalDateTime? = null,
+
+    @Column(nullable = false)
+    val locationAgree: Boolean = false,
+
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val agreements: MutableList<UserAgreementEntity> = mutableListOf()
 )
