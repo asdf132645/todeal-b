@@ -1,19 +1,28 @@
 package com.todeal.domain.barterBid.service
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.todeal.domain.barterBid.dto.BarterBidRequest
 import com.todeal.domain.barterBid.dto.BarterBidResponse
 import com.todeal.domain.barterBid.entity.BarterBidEntity
 import com.todeal.domain.barterBid.repository.BarterBidRepository
+import com.todeal.domain.deal.repository.DealRepository
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class BarterBidService(
     private val barterBidRepository: BarterBidRepository,
+    private val dealRepository: DealRepository,
+    private val redisTemplate: RedisTemplate<String, String>
 ) {
+
+    private val objectMapper = jacksonObjectMapper()
 
     @Transactional
     fun createBarterBid(userId: Long, request: BarterBidRequest): BarterBidResponse {
+        val deal = dealRepository.findById(request.dealId).orElseThrow { RuntimeException("딜이 존재하지 않음") }
+
         val bid = BarterBidEntity(
             dealId = request.dealId,
             userId = userId,
@@ -21,7 +30,18 @@ class BarterBidService(
             description = request.description,
             images = request.images
         )
-        return BarterBidResponse.fromEntity(barterBidRepository.save(bid))
+        val saved = barterBidRepository.save(bid)
+
+        // ✅ Redis Pub/Sub 알림 전송
+        val payload = mapOf(
+            "type" to "deal",
+            "dealId" to deal.id,
+            "dealTitle" to deal.title,
+            "toUserId" to deal.userId
+        )
+        redisTemplate.convertAndSend("pubsub:barter:new", objectMapper.writeValueAsString(payload))
+
+        return BarterBidResponse.fromEntity(saved)
     }
 
     fun getBarterBidsByDeal(dealId: Long): List<BarterBidResponse> {

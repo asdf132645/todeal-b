@@ -1,12 +1,15 @@
 package com.todeal.domain.bid.service
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.todeal.domain.bid.dto.*
 import com.todeal.domain.bid.entity.BidEntity
 import com.todeal.domain.bid.repository.BidRepository
+import com.todeal.domain.chat.repository.ChatRoomRepository
 import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.getByIdOrThrow
 import com.todeal.domain.user.repository.UserRepository
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,8 +17,11 @@ import org.springframework.transaction.annotation.Transactional
 class BidService(
     private val bidRepository: BidRepository,
     private val userRepository: UserRepository,
-    private val dealRepository: DealRepository
+    private val dealRepository: DealRepository,
+    private val redisTemplate: RedisTemplate<String, String>
 ) {
+
+    private val objectMapper = jacksonObjectMapper()
 
     fun getBidsByDealId(dealId: Long): List<BidResponse> {
         val deal = dealRepository.getByIdOrThrow(dealId)
@@ -49,6 +55,7 @@ class BidService(
             ?: throw RuntimeException("해당 닉네임의 유저가 존재하지 않습니다.")
 
         val deal = dealRepository.getByIdOrThrow(request.dealId)
+        println("🚨 딜 정보: id=${deal.id}, userId=${deal.userId}")
 
         val bid = BidEntity(
             dealId = request.dealId,
@@ -60,29 +67,33 @@ class BidService(
         if (request.amount > deal.currentPrice) {
             deal.currentPrice = request.amount
         }
+
+        // ✅ chatRoomId 없어도 무조건 Redis 발행
+        val payload = mapOf(
+            "type" to "deal",
+            "dealId" to deal.id,
+            "dealTitle" to deal.title,
+            "toUserId" to deal.userId
+        )
+
+        println("🚨 Redis 알림 발행: $payload")
+
+        redisTemplate.convertAndSend("pubsub:bid:new", objectMapper.writeValueAsString(payload))
+
     }
 
     fun getMyBids(userId: Long): List<BidWithDealDto> {
-        // 사용자 ID로 입찰 목록을 내림차순으로 조회
         val bids = bidRepository.findByUserIdOrderByCreatedAtDesc(userId)
-
-        // 해당 입찰에 포함된 dealId 목록을 추출
         val dealIds = bids.map { it.dealId }.toSet()
-
-        // 해당 dealIds에 해당하는 Deal을 DB에서 가져옴
         val dealMap = dealRepository.findByIdIn(dealIds).associateBy { it.id }
-
-        // 사용자 정보와 닉네임을 가져옴
         val user = userRepository.findById(userId).orElse(null)
         val nickname = user?.nickname ?: "알 수 없음"
 
-        // 입찰 정보와 Deal 정보 결합하여 BidWithDealDto를 생성
         return bids.mapNotNull { bid ->
             val deal = dealMap[bid.dealId] ?: return@mapNotNull null
             BidWithDealDto.from(bid, nickname, deal.toDto())
         }
     }
-
 
     fun getBidsOnMyDeals(userId: Long): List<DealBidGroupDto> {
         val myDeals = dealRepository.findByUserId(userId)
@@ -104,12 +115,12 @@ class BidService(
             )
         }
     }
+
     @Transactional
     fun cancelBid(bidId: Long) {
         val bid = bidRepository.findById(bidId)
             .orElseThrow { IllegalArgumentException("존재하지 않는 입찰입니다") }
 
-
-        bidRepository.delete(bid) // 해당 입찰 삭제
+        bidRepository.delete(bid)
     }
 }

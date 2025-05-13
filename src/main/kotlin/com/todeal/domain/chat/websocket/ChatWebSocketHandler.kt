@@ -5,17 +5,18 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.todeal.domain.chat.dto.ChatMessageRequest
 import com.todeal.domain.chat.dto.ChatMessageResponse
 import com.todeal.domain.chat.service.ChatService
+import com.todeal.global.websocket.WebSocketMessagingService
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.*
 import org.springframework.web.socket.handler.TextWebSocketHandler
 
 @Component
 class ChatWebSocketHandler(
-    private val chatService: ChatService
+    private val chatService: ChatService,
+    private val messagingService: WebSocketMessagingService
 ) : TextWebSocketHandler() {
 
     private val roomSessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // chatRoomId -> 세션 목록
-    private val userSessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // userId -> 세션 목록
 
     private val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
@@ -37,7 +38,7 @@ class ChatWebSocketHandler(
         }
 
         if (userId != null) {
-            userSessions.computeIfAbsent(userId) { mutableListOf() }.add(session)
+            messagingService.register(userId, session)
             session.attributes["userId"] = userId
         }
     }
@@ -70,7 +71,10 @@ class ChatWebSocketHandler(
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
         roomSessions.values.forEach { it.remove(session) }
-        userSessions.values.forEach { it.remove(session) }
+        val userId = session.attributes["userId"] as? Long
+        if (userId != null) {
+            messagingService.unregister(userId, session)
+        }
     }
 
     private fun broadcastToRoom(chatRoomId: Long, message: TextMessage) {
@@ -89,9 +93,6 @@ class ChatWebSocketHandler(
 
     fun sendMessageToUser(userId: Long, message: ChatMessageResponse) {
         val json = objectMapper.writeValueAsString(message)
-        val textMessage = TextMessage(json)
-        userSessions[userId]?.forEach {
-            if (it.isOpen) it.sendMessage(textMessage)
-        }
+        messagingService.sendToUser(userId, json)
     }
 }
