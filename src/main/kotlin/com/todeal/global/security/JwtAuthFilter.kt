@@ -15,16 +15,16 @@ class JwtAuthFilter(
     private val jwtProvider: JwtProvider
 ) : OncePerRequestFilter() {
 
-    // ✅ 인증 제외 경로 (AntPathMatcher 대신 startsWith 방식)
     private fun isExcluded(request: HttpServletRequest): Boolean {
         val uri = request.requestURI
         val method = request.method
 
-        return uri.startsWith("/api/users/signup")
-                || uri.startsWith("/api/users/login")
-                || uri.startsWith("/api/auth/signup")
-                || uri.startsWith("/api/auth/refresh-token")
-                || (uri.startsWith("/api/deals") && method == "GET")
+        return uri.startsWith("/ws/") || // ✅ WebSocket 예외 처리 추가
+                uri.startsWith("/api/users/signup") ||
+                uri.startsWith("/api/users/login") ||
+                uri.startsWith("/api/auth/signup") ||
+                uri.startsWith("/api/auth/refresh-token") ||
+                (uri.startsWith("/api/deals") && method == "GET")
     }
 
     override fun doFilterInternal(

@@ -29,10 +29,13 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it
                     .requestMatchers(
+                        "/ws/**",                         // ✅ WebSocket 허용
                         "/api/users/signup",
                         "/api/users/login",
                         "/api/auth/signup",
                         "/api/auth/refresh-token",
+                        "/api/hashtags/popular",          // ✅ 인기 해시태그 공개
+                        "/deals/nearby",                  // ✅ 딜 위치 검색 공개
                         "/api/deals/**"
                     ).permitAll()
                     .anyRequest().authenticated()

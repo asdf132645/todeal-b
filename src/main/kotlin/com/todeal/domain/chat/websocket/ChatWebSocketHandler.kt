@@ -14,16 +14,31 @@ class ChatWebSocketHandler(
     private val chatService: ChatService
 ) : TextWebSocketHandler() {
 
-    private val sessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // chatRoomId -> sessions
+    private val roomSessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // chatRoomId -> 세션 목록
+    private val userSessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // userId -> 세션 목록
 
-    // ✅ LocalDateTime 직렬화를 위한 모듈 등록
-    private val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
+    private val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
     override fun afterConnectionEstablished(session: WebSocketSession) {
-        val chatRoomId = session.uri?.query?.split("=")?.lastOrNull()?.toLongOrNull()
+        val query = session.uri?.query ?: return
+        val params = query.split("&").mapNotNull {
+            val parts = it.split("=")
+            if (parts.size == 2) parts[0] to parts[1] else null
+        }.toMap()
+
+        val chatRoomId = params["chatRoomId"]?.toLongOrNull()
+        val userId = params["userId"]?.toLongOrNull()
+
+        println("📡 WebSocket 연결 요청: chatRoomId=$chatRoomId, userId=$userId")
+
         if (chatRoomId != null) {
-            sessions.computeIfAbsent(chatRoomId) { mutableListOf() }.add(session)
+            roomSessions.computeIfAbsent(chatRoomId) { mutableListOf() }.add(session)
             session.attributes["chatRoomId"] = chatRoomId
+        }
+
+        if (userId != null) {
+            userSessions.computeIfAbsent(userId) { mutableListOf() }.add(session)
+            session.attributes["userId"] = userId
         }
     }
 
@@ -41,40 +56,42 @@ class ChatWebSocketHandler(
         val senderId = (payloadMap["senderId"] as? Int)?.toLong() ?: return
         val content = payloadMap["message"] as? String ?: return
 
-        // ✅ DB 저장 + 푸시 전송
         val savedMessage: ChatMessageResponse = chatService.sendMessage(
-            ChatMessageRequest(
-                chatRoomId = chatRoomId,
-                senderId = senderId,
-                message = content
-            )
+            ChatMessageRequest(chatRoomId, senderId, content)
         )
 
-        // ✅ WebSocket으로 응답 다시 브로드캐스트
         sendMessageToRoom(chatRoomId, savedMessage)
-    }
 
-    override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
-        val chatRoomId = session.attributes["chatRoomId"] as? Long ?: return
-        sessions[chatRoomId]?.remove(session)
-    }
-
-    private fun broadcastToRoom(chatRoomId: Long, message: TextMessage) {
-        sessions[chatRoomId]?.forEach {
-            if (it.isOpen) {
-                it.sendMessage(message)
-            }
+        // ✅ receiverId null-safe 처리
+        savedMessage.receiverId?.let { receiverId ->
+            sendMessageToUser(receiverId, savedMessage)
         }
     }
 
-    // ✅ ChatMessageResponse → JSON → WebSocket 전송
+    override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
+        roomSessions.values.forEach { it.remove(session) }
+        userSessions.values.forEach { it.remove(session) }
+    }
+
+    private fun broadcastToRoom(chatRoomId: Long, message: TextMessage) {
+        roomSessions[chatRoomId]?.forEach {
+            if (it.isOpen) it.sendMessage(message)
+        }
+    }
+
     fun sendMessageToRoom(chatRoomId: Long, message: ChatMessageResponse) {
-        val payload = objectMapper.writeValueAsString(message)
-        val textMessage = TextMessage(payload)
-        sessions[chatRoomId]?.forEach {
-            if (it.isOpen) {
-                it.sendMessage(textMessage)
-            }
+        val json = objectMapper.writeValueAsString(message)
+        val textMessage = TextMessage(json)
+        roomSessions[chatRoomId]?.forEach {
+            if (it.isOpen) it.sendMessage(textMessage)
+        }
+    }
+
+    fun sendMessageToUser(userId: Long, message: ChatMessageResponse) {
+        val json = objectMapper.writeValueAsString(message)
+        val textMessage = TextMessage(json)
+        userSessions[userId]?.forEach {
+            if (it.isOpen) it.sendMessage(textMessage)
         }
     }
 }

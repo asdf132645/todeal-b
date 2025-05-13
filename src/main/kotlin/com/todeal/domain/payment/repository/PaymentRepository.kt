@@ -1,7 +1,8 @@
-// repository/PaymentRepository.kt
 package com.todeal.domain.payment.repository
 
-import com.todeal.domain.payment.entity.Payment
+import com.todeal.domain.payment.entity.PaymentEntity
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
 
-interface PaymentRepository : JpaRepository<Payment, Long>
+@Repository
+interface PaymentRepository : JpaRepository<PaymentEntity, Long>

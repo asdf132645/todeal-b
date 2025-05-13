@@ -34,3 +34,7 @@ logging:
 firebase:
   credentials:
     path: firebase-adminsdk.json
+
+bootpay:
+  rest-api-key: ${BOOTPAY_REST_API_KEY}
+  private-key: ${BOOTPAY_PRIVATE_KEY}

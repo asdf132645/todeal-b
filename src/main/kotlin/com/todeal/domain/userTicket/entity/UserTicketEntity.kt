@@ -2,21 +2,25 @@
 package com.todeal.domain.userTicket.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.UpdateTimestamp
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "user_tickets")
+@Table(name = "user_ticket")
 data class UserTicketEntity(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     val userId: Long,
 
-    @Column(nullable = false)
-    val type: String, // invited_reward, purchase, etc
+    var remaining: Int = 10,
 
-    @Column(nullable = false)
-    var remaining: Int = 0,
+    var adRequired: Boolean = false,
 
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    var type: String = "free",
+
+    @UpdateTimestamp
+    var updatedAt: LocalDateTime? = null
 )
+

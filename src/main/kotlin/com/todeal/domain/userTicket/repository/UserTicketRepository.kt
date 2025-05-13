@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface UserTicketRepository : JpaRepository<UserTicketEntity, Long> {
     fun findAllByUserId(userId: Long): List<UserTicketEntity>
+    fun findByUserId(userId: Long): UserTicketEntity?
 }

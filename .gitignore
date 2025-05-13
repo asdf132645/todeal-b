@@ -45,3 +45,5 @@ out/
 ### 🔒 Firebase credentials (secret key)
 src/test/resources/firebase-adminsdk.json
 src/main/resources/firebase-adminsdk.json
+
+.env

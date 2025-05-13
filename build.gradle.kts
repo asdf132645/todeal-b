@@ -21,8 +21,10 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.json:json:20231013") // ✅ 최신 안정 버전
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1") // ✅ dotenv 지원 라이브러리
     implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5") // or :jjwt-gson
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")

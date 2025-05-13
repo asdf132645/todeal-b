@@ -12,16 +12,18 @@ class ChatMessageSubscriber(
     private val chatWebSocketHandler: ChatWebSocketHandler
 ) : MessageListener {
 
-    // ✅ LocalDateTime 지원을 위한 모듈 등록
     private val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
     override fun onMessage(message: Message, pattern: ByteArray?) {
         val json = message.body.toString(Charsets.UTF_8)
-
-        // ✅ JSON 문자열을 ChatMessageResponse 객체로 변환
         val chatMessage = objectMapper.readValue(json, ChatMessageResponse::class.java)
 
-        // ✅ WebSocket으로 해당 방에 메시지 전송
+        // 1. 채팅방 사용자들에게 전송
         chatWebSocketHandler.sendMessageToRoom(chatMessage.chatRoomId, chatMessage)
+
+        // 2. 수신자에게 알림 전송 (UI 띄우기용)
+        if (chatMessage.receiverId != null) {
+            chatWebSocketHandler.sendMessageToUser(chatMessage.receiverId, chatMessage)
+        }
     }
 }

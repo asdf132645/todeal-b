@@ -1,4 +1,3 @@
-// entity/Payment.kt
 package com.todeal.domain.payment.entity
 
 import jakarta.persistence.*
@@ -6,16 +5,21 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "payments")
-data class Payment(
+data class PaymentEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     val userId: Long,
+
     val amount: Int,
 
-    val type: String,  // plan / single
-    val method: String,  // stripe
+    val type: String, // 예: "bootpay"
 
-    val status: String,  // success / fail
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val method: String? = null, // 카드, 계좌이체 등
+
+    val receiptId: String,
+
+    val status: String, // 예: "success"
+
+    val createdAt: LocalDateTime
 )

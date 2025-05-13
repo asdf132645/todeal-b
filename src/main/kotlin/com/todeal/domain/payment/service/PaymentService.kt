@@ -1,9 +1,7 @@
-// service/PaymentService.kt
+// ✅ PaymentService.kt (엔티티 저장용 공통 서비스)
 package com.todeal.domain.payment.service
 
-import com.todeal.domain.payment.dto.PaymentRequest
-import com.todeal.domain.payment.dto.PaymentResponse
-import com.todeal.domain.payment.entity.Payment
+import com.todeal.domain.payment.entity.PaymentEntity
 import com.todeal.domain.payment.repository.PaymentRepository
 import org.springframework.stereotype.Service
 
@@ -11,24 +9,7 @@ import org.springframework.stereotype.Service
 class PaymentService(
     private val paymentRepository: PaymentRepository
 ) {
-    fun createPayment(request: PaymentRequest): PaymentResponse {
-        val payment = Payment(
-            userId = request.userId,
-            amount = request.amount,
-            type = request.type,
-            method = request.method,
-            status = "success" // 임시
-        )
-        return PaymentResponse.from(paymentRepository.save(payment))
-    }
-
-    fun getById(id: Long): PaymentResponse {
-        return paymentRepository.findById(id)
-            .map { PaymentResponse.from(it) }
-            .orElseThrow { NoSuchElementException("결제 내역을 찾을 수 없습니다.") }
-    }
-
-    fun getAll(): List<PaymentResponse> {
-        return paymentRepository.findAll().map { PaymentResponse.from(it) }
+    fun save(payment: PaymentEntity): PaymentEntity {
+        return paymentRepository.save(payment)
     }
 }

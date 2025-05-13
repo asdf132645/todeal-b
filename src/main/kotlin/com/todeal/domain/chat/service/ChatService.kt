@@ -6,6 +6,7 @@ import com.todeal.domain.chat.entity.ChatRoomEntity
 import com.todeal.domain.chat.repository.ChatMessageRepository
 import com.todeal.domain.chat.repository.ChatRoomRepository
 import com.todeal.domain.push.service.PushService
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,10 +35,11 @@ class ChatService(
     }
 
     fun getRecentMessages(chatRoomId: Long, lastMessageId: Long?, limit: Int): List<ChatMessageResponse> {
+        val pageable = PageRequest.of(0, limit)
         val messages = if (lastMessageId != null) {
-            chatMessageRepository.findTopByChatRoomIdAndIdLessThanOrderByIdDesc(chatRoomId, lastMessageId, limit)
+            chatMessageRepository.findByChatRoomIdAndIdLessThanOrderByIdDesc(chatRoomId, lastMessageId, pageable)
         } else {
-            chatMessageRepository.findTopByChatRoomIdOrderByIdDesc(chatRoomId, limit)
+            chatMessageRepository.findByChatRoomIdOrderByIdDesc(chatRoomId, pageable)
         }
         return messages.reversed().map { ChatMessageResponse.fromEntity(it) }
     }
@@ -51,11 +53,13 @@ class ChatService(
                 message = request.message
             )
         )
+
         val response = ChatMessageResponse.fromEntity(entity)
 
-        // 🔔 푸시 알림 전송
+        // 🔔 푸시 및 실시간 알림 전송을 위한 receiverId 추출
         val chatRoom = chatRoomRepository.findByIdOrNull(request.chatRoomId)
         val receiverId = if (chatRoom?.sellerId == request.senderId) chatRoom.buyerId else chatRoom?.sellerId
+
         if (receiverId != null) {
             pushService.sendMessageNotification(
                 toUserId = receiverId,
@@ -63,6 +67,7 @@ class ChatService(
                 body = response.message,
                 data = mapOf("chatRoomId" to request.chatRoomId.toString())
             )
+            return response.copy(receiverId = receiverId) // ✅ receiverId 포함해서 반환
         }
 
         return response
