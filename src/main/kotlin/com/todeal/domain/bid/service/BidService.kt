@@ -9,6 +9,10 @@ import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.getByIdOrThrow
 import com.todeal.domain.user.repository.UserRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -55,7 +59,7 @@ class BidService(
             ?: throw RuntimeException("해당 닉네임의 유저가 존재하지 않습니다.")
 
         val deal = dealRepository.getByIdOrThrow(request.dealId)
-        println("🚨 딜 정보: id=${deal.id}, userId=${deal.userId}")
+        println("\uD83D\uDEA8 딜 정보: id=${deal.id}, userId=${deal.userId}")
 
         val bid = BidEntity(
             dealId = request.dealId,
@@ -68,7 +72,6 @@ class BidService(
             deal.currentPrice = request.amount
         }
 
-        // ✅ chatRoomId 없어도 무조건 Redis 발행
         val payload = mapOf(
             "type" to "deal",
             "dealId" to deal.id,
@@ -76,23 +79,26 @@ class BidService(
             "toUserId" to deal.userId
         )
 
-        println("🚨 Redis 알림 발행: $payload")
+        println("\uD83D\uDEA8 Redis 알림 발행: $payload")
 
         redisTemplate.convertAndSend("pubsub:bid:new", objectMapper.writeValueAsString(payload))
-
     }
 
-    fun getMyBids(userId: Long): List<BidWithDealDto> {
-        val bids = bidRepository.findByUserIdOrderByCreatedAtDesc(userId)
-        val dealIds = bids.map { it.dealId }.toSet()
+    fun getMyBids(userId: Long, type: String?, keyword: String?, page: Int, size: Int): Page<BidWithDealDto> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val bidPage = bidRepository.searchMyBids(userId, type, keyword, pageable)
+
+        val dealIds = bidPage.content.map { it.dealId }.toSet()
         val dealMap = dealRepository.findByIdIn(dealIds).associateBy { it.id }
         val user = userRepository.findById(userId).orElse(null)
         val nickname = user?.nickname ?: "알 수 없음"
 
-        return bids.mapNotNull { bid ->
+        val dtoList = bidPage.content.mapNotNull { bid ->
             val deal = dealMap[bid.dealId] ?: return@mapNotNull null
             BidWithDealDto.from(bid, nickname, deal.toDto())
         }
+
+        return PageImpl(dtoList, pageable, bidPage.totalElements)
     }
 
     fun getBidsOnMyDeals(userId: Long): List<DealBidGroupDto> {

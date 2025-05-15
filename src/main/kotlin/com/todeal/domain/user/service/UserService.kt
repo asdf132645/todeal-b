@@ -58,8 +58,13 @@ class UserService(
         val accessToken = jwtProvider.generateAccessToken(user.id)
         val refreshToken = jwtProvider.generateRefreshToken(user.id)
 
-        return LoginResponse(accessToken, refreshToken, UserResponse.from(user))
+        return LoginResponse(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            user = LoginUserDto.from(user)  // ✅ 이게 맞는 표현
+        )
     }
+
 
 
     fun update(id: Long, request: UserUpdateRequest): UserResponse {

@@ -8,6 +8,7 @@ class ChatMessagePublisher(
     private val redisTemplate: StringRedisTemplate
 ) {
     fun publish(message: String) {
+        println("📤 Redis 발행됨: $message")
         redisTemplate.convertAndSend("pubsub:chat:message", message)
     }
 }

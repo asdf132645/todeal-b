@@ -17,7 +17,6 @@ class ChatWebSocketHandler(
 ) : TextWebSocketHandler() {
 
     private val roomSessions = mutableMapOf<Long, MutableList<WebSocketSession>>() // chatRoomId -> 세션 목록
-
     private val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
     override fun afterConnectionEstablished(session: WebSocketSession) {
@@ -47,30 +46,57 @@ class ChatWebSocketHandler(
         val chatRoomId = session.attributes["chatRoomId"] as? Long ?: return
 
         val payloadMap = objectMapper.readValue(message.payload, Map::class.java)
+        println("📩 받은 메시지 전체 payload: ${message.payload}")
         val type = payloadMap["type"] as? String
+        println("📩 WebSocket payloadMap: $payloadMap")
 
+        // ✅ typing 이벤트만 브로드캐스트
         if (type == "typing") {
             broadcastToRoom(chatRoomId, message)
             return
         }
 
-        val senderId = (payloadMap["senderId"] as? Int)?.toLong() ?: return
+        val senderId = when (val raw = payloadMap["senderId"]) {
+            is Int -> raw.toLong()
+            is Long -> raw
+            is Double -> raw.toLong()
+            is String -> raw.toLongOrNull()
+            else -> null
+        } ?: run {
+            println("❌ senderId 파싱 실패: ${payloadMap["senderId"]}")
+            return
+        }
+
         val content = payloadMap["message"] as? String ?: return
 
         val savedMessage: ChatMessageResponse = chatService.sendMessage(
             ChatMessageRequest(chatRoomId, senderId, content)
         )
 
+        // 🔥 WebSocket 세션에 바로 전송
+        println("📡 WebSocket 세션 직접 전송 시작")
         sendMessageToRoom(chatRoomId, savedMessage)
 
-        // ✅ receiverId null-safe 처리
+        // 🔕 송신자와 수신자 모두 방에 접속해 있으면 알림 생략
         savedMessage.receiverId?.let { receiverId ->
-            sendMessageToUser(receiverId, savedMessage)
+            val roomUsers = roomSessions[chatRoomId]
+                ?.mapNotNull { it.attributes["userId"] as? Long }
+                ?.toSet() ?: emptySet()
+
+            val bothOnline = senderId in roomUsers && receiverId in roomUsers
+
+            if (!bothOnline) {
+                println("📣 수신자에게 알림 보냄: userId=$receiverId")
+                sendMessageToUser(receiverId, savedMessage)
+            } else {
+                println("🔕 송신자/수신자 모두 접속 중 → 알림 생략")
+            }
         }
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
         roomSessions.values.forEach { it.remove(session) }
+
         val userId = session.attributes["userId"] as? Long
         if (userId != null) {
             messagingService.unregister(userId, session)
@@ -86,6 +112,20 @@ class ChatWebSocketHandler(
     fun sendMessageToRoom(chatRoomId: Long, message: ChatMessageResponse) {
         val json = objectMapper.writeValueAsString(message)
         val textMessage = TextMessage(json)
+
+        val sessions = roomSessions[chatRoomId]
+        println("📦 sendMessageToRoom → 세션 수: ${sessions?.size ?: 0}, message=$json")
+
+        sessions?.forEach {
+            val userId = it.attributes["userId"]
+            println("👉 전송 대상: userId=$userId, isOpen=${it.isOpen}")
+            if (it.isOpen) it.sendMessage(textMessage)
+        }
+    }
+
+
+    fun sendMessageToRoom(chatRoomId: Long, messageJson: String) {
+        val textMessage = TextMessage(messageJson)
         roomSessions[chatRoomId]?.forEach {
             if (it.isOpen) it.sendMessage(textMessage)
         }
@@ -94,5 +134,10 @@ class ChatWebSocketHandler(
     fun sendMessageToUser(userId: Long, message: ChatMessageResponse) {
         val json = objectMapper.writeValueAsString(message)
         messagingService.sendToUser(userId, json)
+    }
+
+    fun sendMessageToUser(userId: Long, messageJson: String) {
+        println("📤 WebSocket → userId=$userId, message=$messageJson")
+        messagingService.sendToUser(userId, messageJson)
     }
 }

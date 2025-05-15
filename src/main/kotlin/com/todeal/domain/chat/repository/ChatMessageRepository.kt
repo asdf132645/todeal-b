@@ -20,4 +20,6 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, Long> {
     ): List<ChatMessageEntity>
 
     fun deleteByChatRoomId(chatRoomId: Long)
+    fun deleteAllByChatRoomId(chatRoomId: Long)
+
 }

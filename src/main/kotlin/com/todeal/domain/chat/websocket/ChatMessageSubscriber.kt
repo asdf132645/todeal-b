@@ -2,7 +2,6 @@ package com.todeal.domain.chat.websocket
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.todeal.domain.chat.dto.ChatMessageResponse
 import org.springframework.data.redis.connection.Message
 import org.springframework.data.redis.connection.MessageListener
 import org.springframework.stereotype.Component
@@ -16,14 +15,18 @@ class ChatMessageSubscriber(
 
     override fun onMessage(message: Message, pattern: ByteArray?) {
         val json = message.body.toString(Charsets.UTF_8)
-        val chatMessage = objectMapper.readValue(json, ChatMessageResponse::class.java)
+        println("📨 Redis 수신됨 → $json")
 
-        // 1. 채팅방 사용자들에게 전송
-        chatWebSocketHandler.sendMessageToRoom(chatMessage.chatRoomId, chatMessage)
+        val node = objectMapper.readTree(json)
+        val receiverId = node["receiverId"]?.asLong()
+        val chatRoomId = node["chatRoomId"]?.asLong()
 
-        // 2. 수신자에게 알림 전송 (UI 띄우기용)
-        if (chatMessage.receiverId != null) {
-            chatWebSocketHandler.sendMessageToUser(chatMessage.receiverId, chatMessage)
+        if (chatRoomId != null) {
+            chatWebSocketHandler.sendMessageToRoom(chatRoomId, json)
+        }
+
+        if (receiverId != null) {
+            chatWebSocketHandler.sendMessageToUser(receiverId, json)
         }
     }
 }

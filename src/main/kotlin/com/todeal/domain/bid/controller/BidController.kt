@@ -6,6 +6,7 @@ import com.todeal.domain.bid.dto.BidWithDealDto
 import com.todeal.domain.bid.dto.DealBidGroupDto
 import com.todeal.domain.bid.service.BidService
 import com.todeal.global.response.ApiResponse
+import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -25,16 +26,24 @@ class BidController(
         bidService.selectWinnerBid(id)
         return ApiResponse.success("낙찰 완료")
     }
-    /** 입찰 등록 (🔥 이거 추가됨) */
+
+    /** 입찰 등록 */
     @PostMapping
     fun placeBid(@RequestBody request: BidRequest): ApiResponse<String> {
         bidService.placeBid(request)
         return ApiResponse.success("입찰 완료")
     }
 
+    /** 내가 입찰한 딜 리스트 (페이징 + 검색 + 타입 필터링) */
     @GetMapping("/mine")
-    fun getMyBids(@RequestHeader("X-USER-ID") userId: Long): ApiResponse<List<BidWithDealDto>> {
-        val result = bidService.getMyBids(userId)
+    fun getMyBids(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestParam(required = false) type: String?,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ApiResponse<Page<BidWithDealDto>> {
+        val result = bidService.getMyBids(userId, type, keyword, page, size)
         return ApiResponse.success(result)
     }
 

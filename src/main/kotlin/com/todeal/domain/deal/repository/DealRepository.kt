@@ -4,6 +4,7 @@ import com.todeal.domain.deal.entity.DealEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.LocalDateTime
 
 interface DealRepository : JpaRepository<DealEntity, Long> {
 
@@ -41,5 +42,7 @@ interface DealRepository : JpaRepository<DealEntity, Long> {
 
     // ✅ 여러 dealId로 한 번에 조회
     fun findByIdIn(ids: Set<Long>): List<DealEntity>
+
+    fun findAllByDeadlineBefore(threshold: LocalDateTime): List<DealEntity>
 
 }

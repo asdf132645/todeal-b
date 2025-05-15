@@ -1,10 +1,12 @@
 package com.todeal.domain.chat.service
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.todeal.domain.chat.dto.*
 import com.todeal.domain.chat.entity.ChatMessageEntity
 import com.todeal.domain.chat.entity.ChatRoomEntity
 import com.todeal.domain.chat.repository.ChatMessageRepository
 import com.todeal.domain.chat.repository.ChatRoomRepository
+import com.todeal.domain.chat.websocket.ChatMessagePublisher
 import com.todeal.domain.push.service.PushService
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -15,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 class ChatService(
     private val chatRoomRepository: ChatRoomRepository,
     private val chatMessageRepository: ChatMessageRepository,
-    private val pushService: PushService
+    private val pushService: PushService,
+    private val chatMessagePublisher: ChatMessagePublisher
 ) {
 
     fun createChatRoom(dto: ChatRoomDto): ChatRoomResponse {
@@ -56,7 +59,6 @@ class ChatService(
 
         val response = ChatMessageResponse.fromEntity(entity)
 
-        // 🔔 푸시 및 실시간 알림 전송을 위한 receiverId 추출
         val chatRoom = chatRoomRepository.findByIdOrNull(request.chatRoomId)
         val receiverId = if (chatRoom?.sellerId == request.senderId) chatRoom.buyerId else chatRoom?.sellerId
 
@@ -67,7 +69,21 @@ class ChatService(
                 body = response.message,
                 data = mapOf("chatRoomId" to request.chatRoomId.toString())
             )
-            return response.copy(receiverId = receiverId) // ✅ receiverId 포함해서 반환
+
+            val payload = mapOf(
+                "type" to "chat",
+                "chatRoomId" to request.chatRoomId,
+                "message" to response.message,
+                "senderId" to request.senderId,
+                "receiverId" to receiverId,
+                "sentAt" to response.sentAt.toString()
+            )
+            println("🧨 Redissdsdsd 발행됨 → $payload")
+
+            val objectMapper = jacksonObjectMapper()
+            chatMessagePublisher.publish(objectMapper.writeValueAsString(payload))
+
+            return response.copy(receiverId = receiverId)
         }
 
         return response
