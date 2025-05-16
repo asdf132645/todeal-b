@@ -26,6 +26,7 @@ class JwtAuthFilter(
                 uri.startsWith("/api/users/check-nickname") ||
                 uri.startsWith("/api/userAuth/reset-password") ||
                 uri.startsWith("/api/users/login") ||
+                uri.startsWith("/users/location") ||
                 uri.startsWith("/api/auth/signup") ||
                 uri.startsWith("/api/auth/refresh-token") ||
                 (uri.startsWith("/api/deals") && method == "GET")

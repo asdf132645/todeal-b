@@ -35,6 +35,7 @@ class SecurityConfig(
                         "/api/users/check-email",
                         "/api/users/check-nickname",
                         "/api/userAuth/reset-password",
+                        "/users/location",
                         "/api/users/login",
                         "/api/auth/signup",
                         "/api/auth/refresh-token",

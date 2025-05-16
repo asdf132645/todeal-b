@@ -22,11 +22,12 @@ class NearbyDealController(
         @RequestParam(required = false) type: String?,
         @RequestParam(defaultValue = "10.0") radius: Double
     ): ApiResponse<List<Map<String, Any>>> {
-        val (latitude, longitude) = if (userId != null) {
+
+        val (latitude, longitude) = if (lat != null && lng != null) {
+            lat to lng
+        } else if (userId != null) {
             val location = userLocationService.getUserLocation(userId)
             location.latitude to location.longitude
-        } else if (lat != null && lng != null) {
-            lat to lng
         } else {
             throw IllegalArgumentException("사용자 ID 또는 위도/경도 좌표를 제공해야 합니다.")
         }
@@ -34,6 +35,7 @@ class NearbyDealController(
         val deals = nearbyDealService.getNearbyDeals(latitude, longitude, type, radius)
         return ApiResponse.success(deals.map { it.toResponse() })
     }
+
 
 
     @GetMapping("/nearby/by-coord")

@@ -18,7 +18,8 @@ class PasswordResetService(
 ) {
 
     fun sendResetEmail(email: String) {
-        val user = userRepository.findByEmail(email) ?: return
+        val user = userRepository.findByEmail(email)
+            ?: throw IllegalArgumentException("존재하지 않는 이메일입니다.")
 
         val token = UUID.randomUUID().toString()
         tokenService.saveToken(token, user.id)
