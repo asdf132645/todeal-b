@@ -4,7 +4,9 @@ import com.todeal.domain.auth.JwtProvider
 import com.todeal.domain.auth.dto.LoginResponse
 import com.todeal.domain.auth.dto.SignupRequest
 import com.todeal.domain.user.dto.UserResponse
+import com.todeal.domain.user.entity.UserAgreementEntity
 import com.todeal.domain.user.entity.UserEntity
+import com.todeal.domain.user.repository.UserAgreementRepository
 import com.todeal.domain.user.repository.UserRepository
 import org.json.JSONObject
 import org.springframework.stereotype.Service
@@ -16,7 +18,8 @@ import java.net.http.HttpResponse
 @Service
 class AuthService(
     private val jwtProvider: JwtProvider,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val userAgreementRepository: UserAgreementRepository  // ✅ 추가
 ) {
 
     fun kakaoLogin(kakaoAccessToken: String): Any {
@@ -35,25 +38,37 @@ class AuthService(
     fun signupWithKakao(kakaoAccessToken: String, req: SignupRequest): String {
         val kakaoId = fetchKakaoUserIdFromApi(kakaoAccessToken)
 
-        val newUser = userRepository.save(
-            UserEntity(
-                kakaoId = kakaoId,
-                email = req.email,
-                password = null,
-                nickname = req.nickname,
-                phone = req.phone,
-                role = "USER",
-                isPremium = false,
-                planExpireAt = null,
-                profileImageUrl = null,
-                locationAgree = req.locationAgree,
-                latitude = req.latitude,
-                longitude = req.longitude
-            )
+        // ✅ 중복 가입 방지
+        if (userRepository.existsByKakaoId(kakaoId)) {
+            throw IllegalArgumentException("이미 가입된 카카오 계정입니다.")
+        }
+
+        val user = UserEntity(
+            kakaoId = kakaoId,
+            email = req.email,
+            password = null,
+            nickname = req.nickname,
+            phone = req.phone,
+            role = "USER",
+            isPremium = false,
+            planExpireAt = null,
+            profileImageUrl = null,
+            locationAgree = req.locationAgree,
+            latitude = req.latitude,
+            longitude = req.longitude
         )
 
-        return jwtProvider.generateAccessToken(newUser.id)
+        val savedUser = userRepository.save(user)
+
+        // ✅ 약관 동의 내역 저장
+        val agreements = req.agreements.map { type ->
+            UserAgreementEntity(user = savedUser, type = type)
+        }
+        userAgreementRepository.saveAll(agreements)
+
+        return jwtProvider.generateAccessToken(savedUser.id)
     }
+
 
     private fun fetchKakaoUserIdFromApi(kakaoAccessToken: String): Long {
         val client = HttpClient.newHttpClient()

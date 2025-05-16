@@ -21,6 +21,10 @@ class JwtAuthFilter(
 
         return uri.startsWith("/ws/") || // ✅ WebSocket 예외 처리 추가
                 uri.startsWith("/api/users/signup") ||
+                uri.startsWith("/api/userAuth/reset-password-request") ||
+                uri.startsWith("/api/users/check-email") ||
+                uri.startsWith("/api/users/check-nickname") ||
+                uri.startsWith("/api/userAuth/reset-password") ||
                 uri.startsWith("/api/users/login") ||
                 uri.startsWith("/api/auth/signup") ||
                 uri.startsWith("/api/auth/refresh-token") ||

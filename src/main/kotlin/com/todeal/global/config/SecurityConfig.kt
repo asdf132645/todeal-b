@@ -31,6 +31,10 @@ class SecurityConfig(
                     .requestMatchers(
                         "/ws/**",                         // ✅ WebSocket 허용
                         "/api/users/signup",
+                        "/api/userAuth/reset-password-request",
+                        "/api/users/check-email",
+                        "/api/users/check-nickname",
+                        "/api/userAuth/reset-password",
                         "/api/users/login",
                         "/api/auth/signup",
                         "/api/auth/refresh-token",

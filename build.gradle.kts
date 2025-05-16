@@ -21,6 +21,8 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("com.sun.mail:jakarta.mail:2.0.1")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.json:json:20231013") // ✅ 최신 안정 버전
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")

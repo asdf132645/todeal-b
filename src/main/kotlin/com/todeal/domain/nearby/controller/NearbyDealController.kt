@@ -15,18 +15,23 @@ class NearbyDealController(
 ) {
 
     @GetMapping("/nearby")
-    fun getNearbyDealsByUserId(
-        @RequestHeader("X-USER-ID") userId: Long,
+    fun getNearbyDeals(
+        @RequestHeader(name = "X-USER-ID", required = false) userId: Long?,
+        @RequestParam(required = false) lat: Double?,
+        @RequestParam(required = false) lng: Double?,
         @RequestParam(required = false) type: String?,
-        @RequestParam(required = false, defaultValue = "10.0") radius: Double // 🔥 radius 추가됨
+        @RequestParam(defaultValue = "10.0") radius: Double
     ): ApiResponse<List<Map<String, Any>>> {
-        val location = userLocationService.getUserLocation(userId)
-        val deals = nearbyDealService.getNearbyDeals(
-            lat = location.latitude,
-            lng = location.longitude,
-            type = type,
-            radius = radius // 🔥 넘겨줌
-        )
+        val (latitude, longitude) = if (userId != null) {
+            val location = userLocationService.getUserLocation(userId)
+            location.latitude to location.longitude
+        } else if (lat != null && lng != null) {
+            lat to lng
+        } else {
+            throw IllegalArgumentException("사용자 ID 또는 위도/경도 좌표를 제공해야 합니다.")
+        }
+
+        val deals = nearbyDealService.getNearbyDeals(latitude, longitude, type, radius)
         return ApiResponse.success(deals.map { it.toResponse() })
     }
 

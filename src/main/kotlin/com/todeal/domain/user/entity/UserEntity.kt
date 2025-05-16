@@ -17,7 +17,7 @@ data class UserEntity(
     val email: String? = null,  // 일반 로그인 전용
 
     @Column(nullable = true)
-    val password: String? = null,  // 일반 로그인 전용 (BCrypt 해시 저장)
+    var password: String? = null,  // 일반 로그인 전용 (BCrypt 해시 저장)
 
     @Column(nullable = false)
     val nickname: String,
@@ -32,6 +32,12 @@ data class UserEntity(
     val isPremium: Boolean = false,
 
     val planExpireAt: LocalDateTime? = null,
+
+    @Column(nullable = false)
+    var isBanned: Boolean = false,
+
+    @Column
+    var banReason: String? = null,
 
     @Column(nullable = false)
     val locationAgree: Boolean = false,

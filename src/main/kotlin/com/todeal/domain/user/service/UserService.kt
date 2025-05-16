@@ -19,6 +19,10 @@ class UserService(
 
     @Transactional
     fun signup(request: UserSignupRequest): UserResponse {
+        if (request.email == null || request.password == null) {
+            throw IllegalArgumentException("이메일과 비밀번호는 필수입니다.")
+        }
+
         if (userRepository.existsByEmail(request.email)) {
             throw IllegalArgumentException("이미 존재하는 이메일입니다")
         }
@@ -39,6 +43,8 @@ class UserService(
         )
 
         val savedUser = userRepository.save(user)
+
+        // ✅ 약관 동의 저장
         val agreements = request.agreements.map { type ->
             UserAgreementEntity(user = savedUser, type = type)
         }
@@ -47,6 +53,7 @@ class UserService(
         return UserResponse.from(savedUser)
     }
 
+
     fun login(request: UserLoginRequest): LoginResponse {
         val user = userRepository.findByEmail(request.email)
             ?: throw IllegalArgumentException("이메일 또는 비밀번호가 잘못되었습니다.")
@@ -54,6 +61,13 @@ class UserService(
         if (!passwordEncoder.matches(request.password, user.password)) {
             throw IllegalArgumentException("이메일 또는 비밀번호가 잘못되었습니다.")
         }
+
+
+        // ✅ 정지 여부 확인
+        if (user.isBanned) {
+            throw IllegalStateException("계정이 정지되었습니다. 투딜 관리자에게 문의를 넣어주세요. 사유: ${user.banReason ?: "신고 누적"}")
+        }
+
 
         val accessToken = jwtProvider.generateAccessToken(user.id)
         val refreshToken = jwtProvider.generateRefreshToken(user.id)
@@ -120,4 +134,13 @@ class UserService(
     fun findById(id: Long): UserDto {
         return userRepository.findById(id).orElseThrow().toDto()
     }
+
+    fun existsByEmail(email: String): Boolean {
+        return userRepository.existsByEmail(email)
+    }
+
+    fun existsByNickname(nickname: String): Boolean {
+        return userRepository.existsByNickname(nickname)
+    }
+
 }

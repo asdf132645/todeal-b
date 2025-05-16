@@ -70,4 +70,17 @@ class UserController(
         val result = userService.getById(userId)
         return ApiResponse.success(result)
     }
+
+    @GetMapping("/check-email")
+    fun checkEmail(@RequestParam email: String): ApiResponse<Map<String, Boolean>> {
+        val exists = userService.existsByEmail(email)
+        return ApiResponse.success(mapOf("exists" to exists))
+    }
+
+    @GetMapping("/check-nickname")
+    fun checkNickname(@RequestParam nickname: String): ApiResponse<Map<String, Boolean>> {
+        val exists = userService.existsByNickname(nickname)
+        return ApiResponse.success(mapOf("exists" to exists))
+    }
+
 }

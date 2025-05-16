@@ -6,11 +6,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/todeal
     username: postgres
     password: 1326
-    security:
-      user:
-        name: admin
-        password: 1234
 
+  security:
+    user:
+      name: admin
+      password: 1234
 
   jpa:
     hibernate:
@@ -20,10 +20,21 @@ spring:
       hibernate:
         format_sql: true
 
-    redis:
-      host: localhost
-      port: 6379
+  redis:
+    host: localhost
+    port: 6379
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: amber132623@gmail.com
+    password: csrlnsainkxdbimb
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 logging:
   level:
@@ -37,4 +48,3 @@ firebase:
 bootpay:
   rest-api-key: ${BOOTPAY_REST_API_KEY}
   private-key: ${BOOTPAY_PRIVATE_KEY}
-

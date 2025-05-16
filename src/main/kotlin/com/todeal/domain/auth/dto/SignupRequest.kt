@@ -6,5 +6,6 @@ data class SignupRequest(
     val email: String?, // ✅ 이거 추가
     val locationAgree: Boolean,
     val latitude: Double?,
-    val longitude: Double?
+    val longitude: Double?,
+    val agreements: List<String> // ["terms", "privacy", "location"]
 )
