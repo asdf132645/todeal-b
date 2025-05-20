@@ -1,5 +1,6 @@
 package com.todeal.config
 
+import org.springframework.beans.factory.annotation.Value
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.todeal.domain.chat.websocket.BarterBidSubscriber
@@ -18,9 +19,15 @@ import org.springframework.data.redis.core.StringRedisTemplate
 
 @Configuration
 class RedisConfig {
+    @Value("\${spring.redis.host}")
+    private lateinit var redisHost: String
 
+    @Value("\${spring.redis.port}")
+    private var redisPort: Int = 6379
     @Bean
-    fun redisConnectionFactory(): RedisConnectionFactory = LettuceConnectionFactory("localhost", 6379)
+    fun redisConnectionFactory(): RedisConnectionFactory {
+        return LettuceConnectionFactory(redisHost, redisPort)
+    }
 
     @Bean
     fun redisTemplate(): RedisTemplate<String, Any> {

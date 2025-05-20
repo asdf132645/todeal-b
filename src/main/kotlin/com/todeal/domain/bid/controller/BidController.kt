@@ -10,7 +10,7 @@ import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/bids")
+@RequestMapping("/bids")
 class BidController(
     private val bidService: BidService
 ) {
@@ -42,7 +42,7 @@ class BidController(
         @RequestParam(required = false) keyword: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): ApiResponse<Page<BidWithDealDto>> {
+    ): ApiResponse<Page<Any>> {
         val result = bidService.getMyBids(userId, type, keyword, page, size)
         return ApiResponse.success(result)
     }

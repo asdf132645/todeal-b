@@ -6,16 +6,19 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/hashtags")
+@RequestMapping("/hashtags")
 class HashtagController(
     private val hashtagService: HashtagService
 ) {
 
     @GetMapping
-    fun getAll(): ApiResponse<List<HashtagDto>> {
-        val result = hashtagService.findAll()
+    fun getAll(
+        @RequestParam(defaultValue = "50") limit: Int
+    ): ApiResponse<List<HashtagDto>> {
+        val result = hashtagService.findAll(limit)
         return ApiResponse.success(result)
     }
+
 
     @GetMapping("/{name}")
     fun getByName(@PathVariable name: String): ApiResponse<HashtagDto?> {

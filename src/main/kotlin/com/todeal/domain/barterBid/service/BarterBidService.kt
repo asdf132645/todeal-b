@@ -6,6 +6,7 @@ import com.todeal.domain.barterBid.dto.BarterBidResponse
 import com.todeal.domain.barterBid.entity.BarterBidEntity
 import com.todeal.domain.barterBid.repository.BarterBidRepository
 import com.todeal.domain.deal.repository.DealRepository
+import com.todeal.domain.user.repository.UserRepository
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional
 class BarterBidService(
     private val barterBidRepository: BarterBidRepository,
     private val dealRepository: DealRepository,
+    private val userRepository: UserRepository,
     private val redisTemplate: RedisTemplate<String, String>
 ) {
-
     private val objectMapper = jacksonObjectMapper()
 
     @Transactional
@@ -32,7 +33,8 @@ class BarterBidService(
         )
         val saved = barterBidRepository.save(bid)
 
-        // ✅ Redis Pub/Sub 알림 전송
+        val nickname = userRepository.findById(userId).orElse(null)?.nickname ?: "탈퇴한 사용자"
+
         val payload = mapOf(
             "type" to "deal",
             "dealId" to deal.id,
@@ -41,12 +43,18 @@ class BarterBidService(
         )
         redisTemplate.convertAndSend("pubsub:barter:new", objectMapper.writeValueAsString(payload))
 
-        return BarterBidResponse.fromEntity(saved)
+        return BarterBidResponse.fromEntity(saved, nickname)
     }
 
     fun getBarterBidsByDeal(dealId: Long): List<BarterBidResponse> {
-        return barterBidRepository.findByDealId(dealId)
-            .map { BarterBidResponse.fromEntity(it) }
+        val bids = barterBidRepository.findByDealId(dealId)
+        val userIds = bids.map { it.userId }.toSet()
+        val userMap = userRepository.findByIdIn(userIds).associateBy { it.id }
+
+        return bids.map { bid ->
+            val nickname = userMap[bid.userId]?.nickname ?: "탈퇴한 사용자"
+            BarterBidResponse.fromEntity(bid, nickname)
+        }
     }
 
     @Transactional
@@ -54,17 +62,13 @@ class BarterBidService(
         val acceptedBid = barterBidRepository.findById(id)
             .orElseThrow { RuntimeException("입찰이 존재하지 않음") }
 
-        // 1. 해당 입찰 수락
         acceptedBid.status = BarterBidEntity.BarterBidStatus.ACCEPTED
         barterBidRepository.save(acceptedBid)
 
-        // 2. 동일 딜의 다른 입찰 모두 거절
         val otherBids = barterBidRepository.findByDealId(acceptedBid.dealId)
             .filter { it.id != acceptedBid.id && it.status == BarterBidEntity.BarterBidStatus.PENDING }
 
-        otherBids.forEach {
-            it.status = BarterBidEntity.BarterBidStatus.REJECTED
-        }
+        otherBids.forEach { it.status = BarterBidEntity.BarterBidStatus.REJECTED }
 
         barterBidRepository.saveAll(otherBids)
     }

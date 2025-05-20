@@ -47,47 +47,63 @@ class ChatService(
         return messages.reversed().map { ChatMessageResponse.fromEntity(it) }
     }
 
-    @Transactional
-    fun sendMessage(request: ChatMessageRequest): ChatMessageResponse {
+    fun sendMessage(request: ChatMessageRequest, authenticatedUserId: Long): ChatMessageResponse {
+        val chatRoom = chatRoomRepository.findByIdOrNull(request.chatRoomId)
+            ?: throw IllegalArgumentException("존재하지 않는 채팅방입니다.")
+
+        // 🛡️ senderId는 요청에서 받지 않고, JWT 인증된 사용자 ID로 강제 설정
+        val senderId = authenticatedUserId
+
+        val receiverId = when (senderId) {
+            chatRoom.sellerId -> chatRoom.buyerId
+            chatRoom.buyerId -> chatRoom.sellerId
+            else -> throw IllegalArgumentException("채팅방에 속하지 않은 사용자입니다.")
+        }
+
         val entity = chatMessageRepository.save(
             ChatMessageEntity(
                 chatRoomId = request.chatRoomId,
-                senderId = request.senderId,
+                senderId = senderId, // ✅ 안전하게 설정됨
                 message = request.message
             )
         )
 
         val response = ChatMessageResponse.fromEntity(entity)
 
-        val chatRoom = chatRoomRepository.findByIdOrNull(request.chatRoomId)
-        val receiverId = if (chatRoom?.sellerId == request.senderId) chatRoom.buyerId else chatRoom?.sellerId
+        // 🔔 FCM 푸시
+        pushService.sendMessageNotification(
+            toUserId = receiverId,
+            title = "새 메시지 도착",
+            body = response.message,
+            data = mapOf("chatRoomId" to request.chatRoomId.toString())
+        )
 
-        if (receiverId != null) {
-            pushService.sendMessageNotification(
-                toUserId = receiverId,
-                title = "새 메시지 도착",
-                body = response.message,
-                data = mapOf("chatRoomId" to request.chatRoomId.toString())
-            )
+        // 🔁 Redis 발행
+        val payload = mapOf(
+            "type" to "chat",
+            "chatRoomId" to request.chatRoomId,
+            "message" to response.message,
+            "senderId" to senderId,
+            "receiverId" to receiverId,
+            "sentAt" to response.sentAt.toString()
+        )
 
-            val payload = mapOf(
-                "type" to "chat",
-                "chatRoomId" to request.chatRoomId,
-                "message" to response.message,
-                "senderId" to request.senderId,
-                "receiverId" to receiverId,
-                "sentAt" to response.sentAt.toString()
-            )
-            println("🧨 Redissdsdsd 발행됨 → $payload")
+        val chatNotiPayload = mapOf(
+            "type" to "chatNoti",
+            "chatRoomId" to request.chatRoomId,
+            "message" to response.message,
+            "senderId" to senderId,
+            "receiverId" to receiverId,
+            "sentAt" to response.sentAt.toString()
+        )
 
-            val objectMapper = jacksonObjectMapper()
-            chatMessagePublisher.publish(objectMapper.writeValueAsString(payload))
+        val objectMapper = jacksonObjectMapper()
+        chatMessagePublisher.publishToChatRoom(request.chatRoomId, objectMapper.writeValueAsString(payload))
+        chatMessagePublisher.publishToNotifyChannel(objectMapper.writeValueAsString(chatNotiPayload))
 
-            return response.copy(receiverId = receiverId)
-        }
-
-        return response
+        return response.copy(receiverId = receiverId)
     }
+
 
     @Transactional
     fun markMessagesAsRead(chatRoomId: Long, readerId: Long) {
@@ -97,4 +113,10 @@ class ChatService(
         unreadMessages.forEach { it.read = true }
         chatMessageRepository.saveAll(unreadMessages)
     }
+
+    fun getExistingChatRoom(userId1: Long, userId2: Long, dealId: Long): ChatRoomResponse? {
+        val room = chatRoomRepository.findByUsersAndDeal(userId1, userId2, dealId)
+        return room?.let { ChatRoomResponse.fromEntity(it) }
+    }
+
 }

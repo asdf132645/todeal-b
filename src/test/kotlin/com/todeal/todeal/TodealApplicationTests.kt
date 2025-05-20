@@ -1,5 +1,6 @@
 package com.todeal.todeal
 
+import io.github.cdimascio.dotenv.Dotenv
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -10,15 +11,26 @@ class TodealApplicationTests {
     companion object {
         @JvmStatic
         @BeforeAll
-        fun setupEnv() {
-            // ✅ .env 값을 수동으로 환경변수에 등록
-            System.setProperty("BOOTPAY_REST_API_KEY", "6822d13e00d008657455b08e")
-            System.setProperty("BOOTPAY_PRIVATE_KEY", "3m9vdEG1+Wj5lAo7vRJ0ljqUPR3jRE+VcmXxPlpodJc=")
+        fun loadEnv() {
+            val dotenv = Dotenv.configure()
+                .directory("./") // 루트 경로
+                .ignoreIfMissing()
+                .load()
+
+            System.setProperty("BOOTPAY_REST_API_KEY", dotenv["BOOTPAY_REST_API_KEY"])
+            System.setProperty("BOOTPAY_PRIVATE_KEY", dotenv["BOOTPAY_PRIVATE_KEY"])
+            System.setProperty("AWS_ACCESS_KEY_ID", dotenv["AWS_ACCESS_KEY_ID"])
+            System.setProperty("AWS_SECRET_ACCESS_KEY", dotenv["AWS_SECRET_ACCESS_KEY"])
+            System.setProperty("AWS_S3_BUCKET", dotenv["AWS_S3_BUCKET"])
+            System.setProperty("cloud.aws.credentials.access-key", dotenv["AWS_ACCESS_KEY_ID"])
+            System.setProperty("cloud.aws.credentials.secret-key", dotenv["AWS_SECRET_ACCESS_KEY"])
+            System.setProperty("cloud.aws.region.static", dotenv["AWS_REGION"] ?: "ap-northeast-2")
         }
     }
 
     @Test
     fun contextLoads() {
-        // 테스트가 빈 초기화에 실패하지 않도록 보장
+        println("✅ BOOTPAY KEY: " + System.getProperty("BOOTPAY_REST_API_KEY"))
+        println("✅ AWS KEY: " + System.getProperty("AWS_ACCESS_KEY_ID"))
     }
 }

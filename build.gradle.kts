@@ -21,6 +21,12 @@ repositories {
 }
 
 dependencies {
+    implementation("io.github.cdimascio:java-dotenv:5.2.2")
+    implementation("software.amazon.awssdk:s3:2.20.89") // 최신 AWS SDK v2
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-webflux") // WebClient 사용 시
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.664")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.sun.mail:jakarta.mail:2.0.1")
     implementation("org.springframework.boot:spring-boot-starter-webflux")

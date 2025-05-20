@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/trust-scores")
+@RequestMapping("/trust-scores")
 class TrustScoreController(
     private val trustScoreService: TrustScoreService
 ) {

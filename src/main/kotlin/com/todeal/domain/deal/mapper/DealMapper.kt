@@ -1,5 +1,7 @@
 package com.todeal.domain.deal.mapper
 
+import com.todeal.domain.deal.dto.DealDto
+import com.todeal.domain.deal.dto.DealInternalDto
 import com.todeal.domain.deal.entity.DealEntity
 import com.todeal.domain.deal.dto.DealResponse
 import java.time.LocalDateTime
@@ -14,6 +16,7 @@ fun DealEntity.toResponse(): Map<String, Any> {
         "startPrice" to startPrice,
         "currentPrice" to currentPrice,
         "deadline" to deadline,
+        "userId" to userId, // ✅ 추가
         "region" to region,
         "regionDepth1" to regionDepth1,
         "regionDepth2" to regionDepth2,
@@ -53,5 +56,28 @@ fun DealEntity.toDto(): DealResponse {
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         winnerBidId = this.winnerBidId
+    )
+}
+
+fun DealEntity.toServiceDto(): DealInternalDto {
+    return DealInternalDto(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        type = this.type,
+        startPrice = this.startPrice,
+        currentPrice = this.currentPrice,
+        deadline = this.deadline,
+        region = this.region,
+        regionDepth1 = this.regionDepth1,
+        regionDepth2 = this.regionDepth2,
+        regionDepth3 = this.regionDepth3,
+        latitude = this.latitude,
+        longitude = this.longitude,
+        images = this.images,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+        winnerBidId = this.winnerBidId,
+        ownerId = this.userId,
     )
 }

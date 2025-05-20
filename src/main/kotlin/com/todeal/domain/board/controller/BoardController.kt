@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/board")
+@RequestMapping("/board")
 class BoardController(
     private val boardService: BoardService
 ) {

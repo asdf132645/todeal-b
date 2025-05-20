@@ -17,17 +17,19 @@ class TrustScoreService(
         val result = mutableMapOf<Long, Double>()
         stats.forEach {
             val score = if (it.getTotalCount() > 0) {
-                (it.getPositiveCount().toDouble() / it.getTotalCount()) * 5.0
+                (it.getPositiveCount().toDouble() / it.getTotalCount()) * 100.0
             } else {
-                -1.0
+                50.0  // ✅ 기본값 50점
             }
             result[it.getUserId()] = String.format("%.1f", score).toDouble()
         }
 
-        userIds.forEach { if (!result.containsKey(it)) result[it] = -1.0 }
+        // 점수 없는 유저는 기본값 50.0으로 설정
+        userIds.forEach { if (!result.containsKey(it)) result[it] = 50.0 }
 
         return result
     }
+
 
     @Transactional
     fun submitScore(fromUserId: Long, toUserId: Long, dealId: Long, isPositive: Boolean) {

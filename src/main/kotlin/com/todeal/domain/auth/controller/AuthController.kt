@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 class AuthController(
     private val authService: AuthService
 ) {
@@ -30,6 +30,13 @@ class AuthController(
 
     @PostMapping("/refresh-token")
     fun refreshToken(@RequestBody body: Map<String, String>): ApiResponse<Map<String, String>> {
+        val token = body["refreshToken"] ?: throw IllegalArgumentException("리프레시 토큰 누락")
+        val newAccessToken = authService.refreshAccessToken(token)
+        return ApiResponse.success(mapOf("accessToken" to newAccessToken))
+    }
+
+    @PostMapping("/reissue")
+    fun reissueToken(@RequestBody body: Map<String, String>): ApiResponse<Map<String, String>> {
         val token = body["refreshToken"] ?: throw IllegalArgumentException("리프레시 토큰 누락")
         val newAccessToken = authService.refreshAccessToken(token)
         return ApiResponse.success(mapOf("accessToken" to newAccessToken))

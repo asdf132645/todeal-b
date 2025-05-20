@@ -18,6 +18,7 @@ class JwtAuthFilter(
     private fun isExcluded(request: HttpServletRequest): Boolean {
         val uri = request.requestURI
         val method = request.method
+        logger.warn("🔥 isExcluded 체크 중: uri=$uri, method=$method")
 
         return uri.startsWith("/ws/") || // ✅ WebSocket 예외 처리 추가
                 uri.startsWith("/api/users/signup") ||
@@ -26,10 +27,13 @@ class JwtAuthFilter(
                 uri.startsWith("/api/users/check-nickname") ||
                 uri.startsWith("/api/userAuth/reset-password") ||
                 uri.startsWith("/api/users/login") ||
-                uri.startsWith("/users/location") ||
+                uri.startsWith("/api/auth/kakao-login") ||
+                uri.startsWith("/api/users/location") ||
                 uri.startsWith("/api/auth/signup") ||
                 uri.startsWith("/api/auth/refresh-token") ||
-                (uri.startsWith("/api/deals") && method == "GET")
+                (uri.startsWith("/api/deals") && method == "GET") ||
+                (uri.matches(Regex("/api/barter-bids/deal/\\d+/?")) && method == "GET")
+
     }
 
     override fun doFilterInternal(

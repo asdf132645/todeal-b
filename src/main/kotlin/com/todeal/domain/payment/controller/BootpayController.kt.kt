@@ -5,7 +5,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments")
 class BootpayController(
     private val bootpayService: BootpayService
 ) {

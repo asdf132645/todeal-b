@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface BarterBidRepository : JpaRepository<BarterBidEntity, Long> {
     fun findByDealId(dealId: Long): List<BarterBidEntity>
+    fun findByUserId(userId: Long): List<BarterBidEntity>
 }

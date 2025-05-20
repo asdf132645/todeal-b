@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*
 import com.todeal.domain.auth.JwtProvider
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 class UserController(
     private val userService: UserService,
     private val redisFcmTokenService: RedisFcmTokenService,

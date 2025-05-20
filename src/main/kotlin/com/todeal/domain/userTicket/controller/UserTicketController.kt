@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 class UserTicketController(
     private val userTicketService: UserTicketService
 ) {

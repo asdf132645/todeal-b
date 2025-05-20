@@ -14,12 +14,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.beans.factory.annotation.Value
 
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
     private val jwtAuthFilter: JwtAuthFilter
 ) {
+
+    @Value("\${frontend.base-url}")
+    private lateinit var frontendBaseUrl: String
+
+
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
@@ -33,14 +39,16 @@ class SecurityConfig(
                         "/api/users/signup",
                         "/api/userAuth/reset-password-request",
                         "/api/users/check-email",
+                        "/api/auth/kakao-login",
                         "/api/users/check-nickname",
                         "/api/userAuth/reset-password",
-                        "/users/location",
+                        "/api/barter-bids/deal/**",
+                        "/api/users/location",
                         "/api/users/login",
                         "/api/auth/signup",
                         "/api/auth/refresh-token",
                         "/api/hashtags/popular",          // ✅ 인기 해시태그 공개
-                        "/deals/nearby",                  // ✅ 딜 위치 검색 공개
+                        "/api/deals/nearby",                  // ✅ 딜 위치 검색 공개
                         "/api/deals/**"
                     ).permitAll()
                     .anyRequest().authenticated()
@@ -56,7 +64,7 @@ class SecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration()
         config.allowCredentials = true
-        config.allowedOrigins = listOf("http://localhost:3000")
+        config.allowedOrigins = listOf(frontendBaseUrl)  // ✅ 환경에서 주입된 프론트 URL 사용
         config.allowedMethods = listOf("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")
         config.allowedHeaders = listOf("*")
 

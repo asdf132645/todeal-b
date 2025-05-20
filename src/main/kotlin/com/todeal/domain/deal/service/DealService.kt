@@ -7,6 +7,7 @@ import com.todeal.domain.deal.entity.DealEntity
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.DealQueryRepository
 import com.todeal.domain.deal.mapper.toDto
+import com.todeal.domain.deal.repository.getByIdOrThrow
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
@@ -59,14 +60,26 @@ class DealService(
     fun searchDealsByTypeAndKeyword(
         type: String,
         keyword: String?,
+        exclude: String?,
         page: Int
     ): List<DealResponse> {
         val offset = (page - 1) * 20
-        val deals = if (keyword.isNullOrBlank()) {
-            dealRepository.findByType(type, offset)
-        } else {
-            dealRepository.findByTypeAndKeyword(type, keyword, offset)
+
+        val deals = when {
+            keyword.isNullOrBlank() && exclude.isNullOrBlank() -> {
+                dealRepository.findByType(type, offset)
+            }
+            keyword.isNullOrBlank() && !exclude.isNullOrBlank() -> {
+                dealRepository.findByTypeExcludingKeyword(type, exclude, offset)
+            }
+            !keyword.isNullOrBlank() && exclude.isNullOrBlank() -> {
+                dealRepository.findByTypeAndKeyword(type, keyword, offset)
+            }
+            else -> {
+                dealRepository.findByTypeAndKeywordExcluding(type, keyword!!, exclude!!, offset)
+            }
         }
+
         return deals.map { it.toDto() }
     }
 
@@ -77,20 +90,43 @@ class DealService(
 
         if (deal.userId != userId) throw IllegalAccessException("삭제 권한이 없습니다")
 
-        // 채팅방 전체 조회
         val chatRooms = chatRoomRepository.findAllByDealId(dealId)
         chatRooms.forEach { room ->
             chatMessageRepository.deleteByChatRoomId(room.id)
         }
         chatRoomRepository.deleteAll(chatRooms)
 
-        // 딜 삭제
         dealRepository.delete(deal)
     }
 
     fun getDealsByUserId(userId: Long): List<DealResponse> {
         val results = dealRepository.findByUserId(userId)
-        return results.map { it.toDto() } // ✅ 이게 맞는 타입
+        return results.map { it.toDto() }
     }
 
+    @Transactional
+    fun updateDeal(userId: Long, dealId: Long, request: DealRequest): DealDto {
+        val deal = dealRepository.getByIdOrThrow(dealId)
+
+        if (deal.userId != userId) {
+            throw IllegalAccessException("수정 권한이 없습니다.")
+        }
+
+        deal.update(
+            title = request.title,
+            description = request.description,
+            type = request.type,
+            startPrice = request.startPrice,
+            deadline = request.deadline,
+            region = request.region,
+            regionDepth1 = request.regionDepth1,
+            regionDepth2 = request.regionDepth2,
+            regionDepth3 = request.regionDepth3,
+            latitude = request.latitude,
+            longitude = request.longitude,
+            images = request.images
+        )
+
+        return DealDto.from(deal)
+    }
 }

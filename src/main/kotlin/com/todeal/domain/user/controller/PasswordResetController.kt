@@ -7,7 +7,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/userAuth")
+@RequestMapping("/userAuth")
 class PasswordResetController(
     private val passwordResetService: PasswordResetService
 ) {

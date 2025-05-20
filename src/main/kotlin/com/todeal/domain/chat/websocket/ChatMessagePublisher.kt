@@ -11,4 +11,13 @@ class ChatMessagePublisher(
         println("📤 Redis 발행됨: $message")
         redisTemplate.convertAndSend("pubsub:chat:message", message)
     }
+
+    fun publishToChatRoom(chatRoomId: Long, payload: String) {
+        redisTemplate.convertAndSend("pubsub:chat:room:$chatRoomId", payload)  // 실시간 채팅방용 (있다면)
+    }
+
+    fun publishToNotifyChannel(payload: String) {
+        redisTemplate.convertAndSend("pubsub:chat:message", payload) // 웹뷰 알림용
+    }
+
 }

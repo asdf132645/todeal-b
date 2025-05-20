@@ -6,7 +6,7 @@ import com.todeal.domain.search.service.SearchService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/searches")
+@RequestMapping("/searches")
 class SearchController(
     private val searchService: SearchService
 ) {

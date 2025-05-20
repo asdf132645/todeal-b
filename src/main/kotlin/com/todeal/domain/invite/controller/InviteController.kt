@@ -6,7 +6,7 @@ import com.todeal.domain.invite.service.InviteService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/invites")
+@RequestMapping("/invites")
 class InviteController(
     private val inviteService: InviteService
 ) {

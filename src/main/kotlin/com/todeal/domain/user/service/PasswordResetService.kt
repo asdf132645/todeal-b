@@ -8,6 +8,7 @@ import java.util.*
 import jakarta.mail.Message
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
+import org.springframework.beans.factory.annotation.Value
 
 @Service
 class PasswordResetService(
@@ -16,6 +17,8 @@ class PasswordResetService(
     private val mailSender: JavaMailSender,
     private val passwordEncoder: PasswordEncoder
 ) {
+    @Value("\${frontend.base-url}")
+    private lateinit var frontendBaseUrl: String
 
     fun sendResetEmail(email: String) {
         val user = userRepository.findByEmail(email)
@@ -24,7 +27,7 @@ class PasswordResetService(
         val token = UUID.randomUUID().toString()
         tokenService.saveToken(token, user.id)
 
-        val resetUrl = "http://localhost:3000/reset-password?token=$token"
+        val resetUrl = "$frontendBaseUrl/reset-password?token=$token"
 
         try {
             val message: MimeMessage = mailSender.createMimeMessage()
