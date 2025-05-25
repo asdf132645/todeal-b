@@ -1,11 +1,13 @@
 package com.todeal.domain.deal.dto
 
+import com.todeal.domain.deal.model.PricingType
 import java.time.LocalDateTime
 
 data class DealRequest(
     val title: String,
     val description: String,
-    val type: String, // "used", "parttime", "barter", "parttime-request"
+    val type: String,
+    val pricingType: PricingType = PricingType.BIDDING,
     val startPrice: Int,
     val deadline: LocalDateTime,
     val region: String,

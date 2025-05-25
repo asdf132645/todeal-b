@@ -51,11 +51,13 @@ class DealController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) lat: Double?,
-        @RequestParam(required = false) lng: Double?
+        @RequestParam(required = false) lng: Double?,
+        @RequestParam(defaultValue = "2") radius: Int
     ): ApiResponse<List<Map<String, Any>>> {
-        val result = dealService.getFilteredDeals(type, hashtags, sort, page, size, lat, lng)
+        val result = dealService.getFilteredDeals(type, hashtags, sort, page, size, lat, lng, radius)
         return ApiResponse.success(result.map { it.toResponse() })
     }
+
 
     /** 내가 등록한 딜 목록 조회 */
     @GetMapping("/mine")

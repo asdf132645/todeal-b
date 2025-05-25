@@ -36,6 +36,9 @@ data class UserEntity(
     @Column(nullable = false)
     var isBanned: Boolean = false,
 
+    @Column(name = "report_count", nullable = false)
+    var reportCount: Int = 0,
+
     @Column
     var banReason: String? = null,
 
@@ -44,6 +47,9 @@ data class UserEntity(
 
     val latitude: Double? = null,
     val longitude: Double? = null,
+
+    @Column(nullable = false)
+    var trustScore: Double = 50.0,
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val agreements: MutableList<UserAgreementEntity> = mutableListOf()

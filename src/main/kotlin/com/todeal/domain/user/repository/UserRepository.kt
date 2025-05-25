@@ -11,4 +11,5 @@ interface UserRepository : JpaRepository<UserEntity, Long> {
     fun existsByEmail(email: String): Boolean
     fun existsByNickname(nickname: String): Boolean
     fun existsByKakaoId(kakaoId: Long): Boolean
+    fun findAllByReportCountGreaterThanEqual(min: Int): List<UserEntity>
 }

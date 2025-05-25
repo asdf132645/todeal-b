@@ -2,8 +2,8 @@ package com.todeal.domain.deal.mapper
 
 import com.todeal.domain.deal.dto.DealDto
 import com.todeal.domain.deal.dto.DealInternalDto
-import com.todeal.domain.deal.entity.DealEntity
 import com.todeal.domain.deal.dto.DealResponse
+import com.todeal.domain.deal.entity.DealEntity
 import java.time.LocalDateTime
 
 // ✅ 프론트 JSON 응답용 Map
@@ -13,10 +13,11 @@ fun DealEntity.toResponse(): Map<String, Any> {
         "title" to title,
         "description" to description,
         "type" to type,
+        "pricingType" to pricingType.name, // ✅ 추가
         "startPrice" to startPrice,
         "currentPrice" to currentPrice,
         "deadline" to deadline,
-        "userId" to userId, // ✅ 추가
+        "userId" to userId,
         "region" to region,
         "regionDepth1" to regionDepth1,
         "regionDepth2" to regionDepth2,
@@ -26,7 +27,7 @@ fun DealEntity.toResponse(): Map<String, Any> {
         "images" to images,
         "createdAt" to createdAt,
         "updatedAt" to updatedAt,
-        "isExpired" to (deadline.isBefore(LocalDateTime.now()) || winnerBidId != null) // ✅ 핵심
+        "isExpired" to (deadline.isBefore(LocalDateTime.now()) || winnerBidId != null)
     )
 
     winnerBidId?.let {
@@ -36,13 +37,14 @@ fun DealEntity.toResponse(): Map<String, Any> {
     return result
 }
 
-// ✅ DTO 변환용 (Service 내부, 응답 객체)
+// ✅ DTO 변환용 (Service → Controller 응답)
 fun DealEntity.toDto(): DealResponse {
     return DealResponse(
         id = this.id,
         title = this.title,
         description = this.description,
         type = this.type,
+        pricingType = this.pricingType, // ✅ 추가
         startPrice = this.startPrice,
         currentPrice = this.currentPrice,
         deadline = this.deadline,
@@ -59,12 +61,14 @@ fun DealEntity.toDto(): DealResponse {
     )
 }
 
+// ✅ Service 내부 로직용 DTO
 fun DealEntity.toServiceDto(): DealInternalDto {
     return DealInternalDto(
         id = this.id,
         title = this.title,
         description = this.description,
         type = this.type,
+        pricingType = this.pricingType, // ✅ 추가
         startPrice = this.startPrice,
         currentPrice = this.currentPrice,
         deadline = this.deadline,
@@ -78,6 +82,6 @@ fun DealEntity.toServiceDto(): DealInternalDto {
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         winnerBidId = this.winnerBidId,
-        ownerId = this.userId,
+        ownerId = this.userId
     )
 }

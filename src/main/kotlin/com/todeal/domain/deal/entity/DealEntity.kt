@@ -1,7 +1,12 @@
 package com.todeal.domain.deal.entity
 
+import com.todeal.domain.deal.model.PricingType
 import jakarta.persistence.*
 import java.time.LocalDateTime
+
+enum class DealStatus {
+    ACTIVE, EXPIRED, DELETED
+}
 
 @Entity
 @Table(name = "deals")
@@ -14,6 +19,10 @@ data class DealEntity(
     var description: String,
     var type: String, // "used", "parttime", "parttime-request", "barter"
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pricing_type", nullable = false)
+    var pricingType: PricingType = PricingType.BIDDING,
+
     @Column(name = "user_id", nullable = false)
     val userId: Long,
 
@@ -22,16 +31,16 @@ data class DealEntity(
     var deadline: LocalDateTime,
 
     @Column(nullable = false)
-    var region: String, // 예: 서울특별시 강남구 역삼동
+    var region: String,
 
     @Column(name = "region_depth1", nullable = false)
-    var regionDepth1: String, // 예: 서울특별시
+    var regionDepth1: String,
 
     @Column(name = "region_depth2", nullable = false)
-    var regionDepth2: String, // 예: 강남구
+    var regionDepth2: String,
 
     @Column(name = "region_depth3", nullable = false)
-    var regionDepth3: String, // 예: 역삼동
+    var regionDepth3: String,
 
     var latitude: Double,
     var longitude: Double,
@@ -43,6 +52,10 @@ data class DealEntity(
 
     @Column(name = "winner_bid_id")
     var winnerBidId: Long? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    var status: DealStatus = DealStatus.ACTIVE,
 
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime = LocalDateTime.now(),
@@ -65,6 +78,7 @@ data class DealEntity(
         title: String,
         description: String,
         type: String,
+        pricingType: PricingType,
         startPrice: Int,
         deadline: LocalDateTime,
         region: String,
@@ -78,6 +92,7 @@ data class DealEntity(
         this.title = title
         this.description = description
         this.type = type
+        this.pricingType = pricingType
         this.startPrice = startPrice
         this.deadline = deadline
         this.region = region

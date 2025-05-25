@@ -24,6 +24,7 @@ class DealService(
             title = request.title,
             description = request.description,
             type = request.type,
+            pricingType = request.pricingType, // ✅ 여기에 추가
             userId = userId,
             startPrice = request.startPrice,
             currentPrice = request.startPrice,
@@ -39,6 +40,7 @@ class DealService(
         return DealDto.from(dealRepository.save(deal))
     }
 
+
     fun getDealById(id: Long): DealDto {
         val deal = dealRepository.findById(id)
             .orElseThrow { NoSuchElementException("Deal not found") }
@@ -52,9 +54,10 @@ class DealService(
         page: Int,
         size: Int,
         lat: Double?,
-        lng: Double?
+        lng: Double?,
+        radius: Int
     ): List<DealEntity> {
-        return dealQueryRepository.findFilteredDeals(type, hashtags, sort, page, size, lat, lng)
+        return dealQueryRepository.findFilteredDeals(type, hashtags, sort, page, size, lat, lng, radius)
     }
 
     fun searchDealsByTypeAndKeyword(
@@ -116,6 +119,7 @@ class DealService(
             title = request.title,
             description = request.description,
             type = request.type,
+            pricingType = request.pricingType, // ✅ 여기에 추가
             startPrice = request.startPrice,
             deadline = request.deadline,
             region = request.region,

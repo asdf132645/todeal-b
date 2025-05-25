@@ -1,13 +1,19 @@
 package com.todeal.domain.deal.repository
 
 import com.todeal.domain.deal.entity.DealEntity
+import com.todeal.domain.deal.entity.DealStatus
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Page
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.LocalDateTime
 
 interface DealRepository : JpaRepository<DealEntity, Long> {
-
+    fun findAllByDeadlineBeforeAndStatus(deadline: LocalDateTime, status: DealStatus): List<DealEntity>
+    fun findAllByUserIdInAndStatus(userIds: List<Long>, status: DealStatus): List<DealEntity>
+    fun findByUserId(userId: Long, pageable: Pageable): Page<DealEntity>
+    fun findByUserIdAndTitleContainingIgnoreCase(userId: Long, keyword: String, pageable: Pageable): Page<DealEntity>
     @Query(
         value = """
             SELECT * FROM deals

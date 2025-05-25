@@ -13,18 +13,17 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
         value = """
             SELECT * FROM (
                 SELECT d.*, (
-                    6371 * acos(
-                        cos(radians(:lat)) * cos(radians(d.latitude)) * 
-                        cos(radians(d.longitude) - radians(:lng)) + 
-                        sin(radians(:lat)) * sin(radians(d.latitude))
-                    )
+                    6371 * 2 * ASIN(SQRT(
+                        POWER(SIN(RADIANS(:lat - d.latitude) / 2), 2) +
+                        COS(RADIANS(:lat)) * COS(RADIANS(d.latitude)) *
+                        POWER(SIN(RADIANS(:lng - d.longitude) / 2), 2)
+                    ))
                 ) AS distance
                 FROM deals d
-                WHERE d.deadline > now()
+                WHERE d.deadline > NOW()
             ) AS sub
-            WHERE distance < :radius
-            ORDER BY sub.created_at DESC
-            LIMIT 10
+            WHERE distance <= :radius
+            ORDER BY distance ASC
         """,
         nativeQuery = true
     )
@@ -38,18 +37,17 @@ interface NearbyDealQueryRepository : Repository<DealEntity, Long> {
         value = """
             SELECT * FROM (
                 SELECT d.*, (
-                    6371 * acos(
-                        cos(radians(:lat)) * cos(radians(d.latitude)) * 
-                        cos(radians(d.longitude) - radians(:lng)) + 
-                        sin(radians(:lat)) * sin(radians(d.latitude))
-                    )
+                    6371 * 2 * ASIN(SQRT(
+                        POWER(SIN(RADIANS(:lat - d.latitude) / 2), 2) +
+                        COS(RADIANS(:lat)) * COS(RADIANS(d.latitude)) *
+                        POWER(SIN(RADIANS(:lng - d.longitude) / 2), 2)
+                    ))
                 ) AS distance
                 FROM deals d
-                WHERE d.deadline > now() AND LOWER(d.type) = LOWER(:type)
+                WHERE d.deadline > NOW() AND LOWER(d.type) = LOWER(:type)
             ) AS sub
-            WHERE distance < :radius
-            ORDER BY sub.created_at DESC
-            LIMIT 10
+            WHERE distance <= :radius
+            ORDER BY distance ASC
         """,
         nativeQuery = true
     )

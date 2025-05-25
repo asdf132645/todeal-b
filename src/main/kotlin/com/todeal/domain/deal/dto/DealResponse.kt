@@ -1,5 +1,6 @@
 package com.todeal.domain.deal.dto
 
+import com.todeal.domain.deal.model.PricingType
 import java.time.LocalDateTime
 
 data class DealResponse(
@@ -7,6 +8,7 @@ data class DealResponse(
     val title: String,
     val description: String,
     val type: String,
+    val pricingType: PricingType,
     val startPrice: Int,
     val currentPrice: Int,
     val deadline: LocalDateTime,

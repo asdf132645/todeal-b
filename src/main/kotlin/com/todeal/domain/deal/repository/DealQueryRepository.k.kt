@@ -18,12 +18,12 @@ class DealQueryRepository {
         page: Int,
         size: Int,
         lat: Double?,
-        lng: Double?
+        lng: Double?,
+        radius: Int
     ): List<DealEntity> {
         val sb = StringBuilder()
         sb.append("SELECT d FROM DealEntity d ")
 
-        // 해시태그 필터가 있을 경우 JOIN
         if (!hashtags.isNullOrEmpty()) {
             sb.append("JOIN d.hashtags h ")
         }
@@ -38,33 +38,41 @@ class DealQueryRepository {
             sb.append("AND h.name IN :hashtags ")
         }
 
-        // 정렬 기준
-        when {
-            sort == "distance" && lat != null && lng != null -> {
-                sb.append(
-                    "ORDER BY " +
-                            "(6371 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * " +
-                            "cos(radians(d.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(d.latitude))))"
-                )
+        // ✅ 거리 필터링은 항상 적용 (lat/lng 둘 다 존재 시)
+        if (lat != null && lng != null) {
+            sb.append(
+                "AND (6371 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * " +
+                        "cos(radians(d.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(d.latitude)))) <= :radius "
+            )
+        }
+
+        // ✅ 정렬 조건 분기
+        when (sort) {
+            "distance" -> {
+                if (lat != null && lng != null) {
+                    sb.append(
+                        "ORDER BY (6371 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * " +
+                                "cos(radians(d.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(d.latitude)))) ASC "
+                    )
+                } else {
+                    sb.append("ORDER BY d.createdAt DESC ")
+                }
             }
 
-            sort == "deadline" -> {
-                sb.append("ORDER BY d.deadline ASC ")
-            }
-
-            else -> {
-                sb.append("ORDER BY d.createdAt DESC ")
-            }
+            "deadline" -> sb.append("ORDER BY d.deadline ASC ")
+            else -> sb.append("ORDER BY d.createdAt DESC ")
         }
 
         val query = em.createQuery(sb.toString(), DealEntity::class.java)
 
-        // 파라미터 바인딩
         if (!type.isNullOrBlank()) query.setParameter("type", type)
         if (!hashtags.isNullOrEmpty()) query.setParameter("hashtags", hashtags)
-        if (sort == "distance" && lat != null && lng != null) {
+
+        // 거리 필터링이 조건에 포함되었을 경우 좌표 세팅
+        if (lat != null && lng != null) {
             query.setParameter("lat", lat)
             query.setParameter("lng", lng)
+            query.setParameter("radius", radius)
         }
 
         query.firstResult = page * size

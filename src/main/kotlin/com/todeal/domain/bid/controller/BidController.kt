@@ -48,10 +48,16 @@ class BidController(
     }
 
     @GetMapping("/on-my-deals")
-    fun getBidsOnMyDeals(@RequestHeader("X-USER-ID") userId: Long): ApiResponse<List<DealBidGroupDto>> {
-        val result = bidService.getBidsOnMyDeals(userId)
+    fun getBidsOnMyDeals(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(required = false) keyword: String?
+    ): ApiResponse<Page<DealBidGroupDto>> {
+        val result = bidService.getBidsOnMyDeals(userId, page, size, keyword)
         return ApiResponse.success(result)
     }
+
 
     @PatchMapping("/{dealId}/cancel-winner")
     fun cancelWinner(@PathVariable dealId: Long): ApiResponse<String> {

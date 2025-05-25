@@ -127,14 +127,26 @@ class BidService(
         return PageImpl(paged, pageable, combined.size.toLong())
     }
 
-    fun getBidsOnMyDeals(userId: Long): List<DealBidGroupDto> {
-        val myDeals = dealRepository.findByUserId(userId)
-        val dealIds = myDeals.map { it.id }
+    fun getBidsOnMyDeals(userId: Long, page: Int, size: Int, keyword: String?): Page<DealBidGroupDto> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+
+        // 1. 내가 등록한 딜 중 검색어 필터링
+        val myDealsPage = if (!keyword.isNullOrBlank()) {
+            dealRepository.findByUserIdAndTitleContainingIgnoreCase(userId, keyword, pageable)
+        } else {
+            dealRepository.findByUserId(userId, pageable)
+        }
+
+        // 2. 딜 ID 목록
+        val dealIds = myDealsPage.content.map { it.id }
+
+        // 3. 해당 딜들의 입찰 목록
         val bids = bidRepository.findByDealIdIn(dealIds)
         val userIds = bids.map { it.userId }.toSet()
         val userMap = userRepository.findByIdIn(userIds).associateBy { it.id }
 
-        return myDeals.mapNotNull { deal ->
+        // 4. 입찰이 존재하는 딜만 그룹핑
+        val grouped = myDealsPage.content.mapNotNull { deal ->
             val bidsOnDeal = bids.filter { it.dealId == deal.id }
             if (bidsOnDeal.isEmpty()) return@mapNotNull null
 
@@ -146,7 +158,10 @@ class BidService(
                 }
             )
         }
+
+        return PageImpl(grouped, pageable, myDealsPage.totalElements)
     }
+
 
     @Transactional
     fun cancelBid(bidId: Long) {

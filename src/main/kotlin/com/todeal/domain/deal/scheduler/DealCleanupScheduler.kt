@@ -3,7 +3,9 @@ package com.todeal.domain.deal.scheduler
 import com.todeal.domain.bid.repository.BidRepository
 import com.todeal.domain.chat.repository.ChatRoomRepository
 import com.todeal.domain.chat.repository.ChatMessageRepository
+import com.todeal.domain.deal.entity.DealStatus
 import com.todeal.domain.deal.repository.DealRepository
+import com.todeal.domain.user.repository.UserRepository
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -14,29 +16,33 @@ class DealCleanupScheduler(
     private val dealRepository: DealRepository,
     private val bidRepository: BidRepository,
     private val chatRoomRepository: ChatRoomRepository,
-    private val chatMessageRepository: ChatMessageRepository
+    private val chatMessageRepository: ChatMessageRepository,
+    private val userRepository: UserRepository // ✅ 추가됨
 ) {
 
     @Scheduled(cron = "0 30 3 * * ?") // 매일 새벽 3:30
     @Transactional
-    fun deleteExpiredDealsAndRelations() {
-        val threshold = LocalDateTime.now().minusDays(7)
-        val expiredDeals = dealRepository.findAllByDeadlineBefore(threshold)
+    fun markExpiredDealsOnly() {
+        val now = LocalDateTime.now()
 
-        for (deal in expiredDeals) {
-            // 🔹 입찰 삭제
-            bidRepository.deleteAllByDealId(deal.id)
+        // 🔹 1. 마감 시간이 지난 딜 중 ACTIVE 상태인 것
+        val expiredDeals = dealRepository.findAllByDeadlineBeforeAndStatus(now, DealStatus.ACTIVE)
 
-            // 🔹 채팅방 및 메시지 삭제
-            val chatRoom = chatRoomRepository.findByDealId(deal.id)
-            if (chatRoom != null) {
-                chatMessageRepository.deleteAllByChatRoomId(chatRoom.id)
-                chatRoomRepository.delete(chatRoom)
-            }
+        // 🔹 2. 신고 10회 이상 유저의 딜 중 ACTIVE 상태인 것
+        val reportedUserIds = userRepository.findAllByReportCountGreaterThanEqual(10).map { it.id }
+        val reportedUserDeals = if (reportedUserIds.isNotEmpty()) {
+            dealRepository.findAllByUserIdInAndStatus(reportedUserIds, DealStatus.ACTIVE)
+        } else {
+            emptyList()
         }
 
-        // 🔹 딜 삭제
-        dealRepository.deleteAll(expiredDeals)
-        println("🧹 마감 후 7일 지난 딜 ${expiredDeals.size}건 및 연관 데이터 삭제 완료")
+        // 🔹 중복 제거
+        val allToExpire = (expiredDeals + reportedUserDeals).distinctBy { it.id }
+
+        for (deal in allToExpire) {
+            deal.status = DealStatus.EXPIRED
+        }
+
+        println("🕒 상태 마감 처리된 딜: ${allToExpire.size}건 (마감시간 초과 + 신고 누적 유저)")
     }
 }

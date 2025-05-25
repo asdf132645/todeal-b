@@ -1,5 +1,6 @@
 package com.todeal.domain.deal.dto
 
+import com.todeal.domain.deal.model.PricingType
 import java.time.LocalDateTime
 
 data class DealInternalDto(
@@ -7,6 +8,7 @@ data class DealInternalDto(
     val title: String,
     val description: String,
     val type: String,
+    val pricingType: PricingType, // ✅ 추가
     val startPrice: Int,
     val currentPrice: Int,
     val deadline: LocalDateTime,
@@ -19,6 +21,6 @@ data class DealInternalDto(
     val images: List<String>,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val winnerBidId: Long?,
-    val ownerId: Long,
+    val winnerBidId: Long? = null,
+    val ownerId: Long
 )

@@ -10,7 +10,8 @@ data class UserResponse(
     val profileImageUrl: String?,
     val role: String,
     val isPremium: Boolean,
-    val planExpireAt: LocalDateTime?
+    val planExpireAt: LocalDateTime?,
+    val trustScore: Double
 ) {
     companion object {
         fun from(entity: UserEntity): UserResponse {
@@ -21,7 +22,8 @@ data class UserResponse(
                 profileImageUrl = entity.profileImageUrl,
                 role = entity.role,
                 isPremium = entity.isPremium,
-                planExpireAt = entity.planExpireAt
+                planExpireAt = entity.planExpireAt,
+                trustScore = entity.trustScore
             )
         }
     }

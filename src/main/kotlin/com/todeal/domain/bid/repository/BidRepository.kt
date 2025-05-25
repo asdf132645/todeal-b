@@ -1,6 +1,7 @@
 package com.todeal.domain.bid.repository
 
 import com.todeal.domain.bid.entity.BidEntity
+import com.todeal.domain.deal.entity.DealEntity
 import org.springframework.data.repository.query.Param
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.domain.Pageable
@@ -43,7 +44,8 @@ interface BidRepository : JpaRepository<BidEntity, Long> {
     WHERE d.winnerBidId IS NULL AND d.deadline < :threshold
     """
     )
-    fun findUnwonBefore(@Param("threshold") threshold: LocalDateTime): List<BidEntity>
+    fun findByUserIdAndTitleContainingIgnoreCase(userId: Long, keyword: String, pageable: Pageable): Page<DealEntity>
+
     fun deleteAllByDealId(dealId: Long)
 
 }
