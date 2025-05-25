@@ -15,9 +15,10 @@ class BoardController(
     fun getPosts(
         @RequestParam(required = false) latitude: Double?,
         @RequestParam(required = false) longitude: Double?,
-        @RequestParam(required = false) distance: Double?
+        @RequestParam(required = false) distance: Double?,
+        @RequestParam(required = false) category: String? // ✅ 필터링 파라미터
     ): ApiResponse<List<BoardPostResponse>> {
-        return ApiResponse.success(boardService.getPosts(latitude, longitude, distance))
+        return ApiResponse.success(boardService.getPosts(latitude, longitude, distance, category))
     }
 
     @GetMapping("/{id}")

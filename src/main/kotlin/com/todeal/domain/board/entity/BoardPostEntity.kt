@@ -1,4 +1,3 @@
-// ✅ BoardPostEntity.kt
 package com.todeal.domain.board.entity
 
 import jakarta.persistence.*
@@ -11,25 +10,37 @@ data class BoardPostEntity(
     val id: Long = 0,
 
     @Column(nullable = false)
-    val userId: Long,
+    var userId: Long,
 
     @Column(nullable = false)
-    val title: String,
+    var title: String,
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    val content: String,
+    var content: String,
 
     @Column(nullable = false)
-    val latitude: Double,
+    var category: String,  // ✅ 추가됨
 
     @Column(nullable = false)
-    val longitude: Double,
+    var latitude: Double,
 
     @Column(nullable = false)
-    val nickname: String,
+    var longitude: Double,
+
+    @Column(nullable = false)
+    var nickname: String,
 
     @Column(nullable = true)
-    val region: String? = null,
+    var region: String? = null,
+
+    @Column(nullable = false)
+    var language: String = "ko",
+
+    @Column(nullable = true)
+    var translatedTitle: String? = null,
+
+    @Column(nullable = true, columnDefinition = "TEXT")
+    var translatedContent: String? = null,
 
     var commentCount: Int = 0,
     var viewCount: Int = 0,

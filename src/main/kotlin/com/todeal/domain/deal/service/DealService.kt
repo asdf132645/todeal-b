@@ -10,6 +10,7 @@ import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.repository.getByIdOrThrow
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class DealService(
@@ -132,5 +133,17 @@ class DealService(
         )
 
         return DealDto.from(deal)
+    }
+
+    @Transactional
+    fun promoteDeal(userId: Long, dealId: Long, days: Long) {
+        val deal = dealRepository.getByIdOrThrow(dealId)
+
+        if (deal.userId != userId) {
+            throw IllegalAccessException("본인의 딜만 프로모션 등록할 수 있습니다.")
+        }
+
+        deal.isPromoted = true
+        deal.promotionExpireAt = LocalDateTime.now().plusDays(days)
     }
 }

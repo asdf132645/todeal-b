@@ -58,6 +58,17 @@ class DealController(
         return ApiResponse.success(result.map { it.toResponse() })
     }
 
+    // 유료플랜을 위한 상위노출 딜
+    @PostMapping("/{id}/promote")
+    fun promoteDeal(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @PathVariable id: Long,
+        @RequestBody request: PromoteRequest
+    ): ApiResponse<Unit> {
+        dealService.promoteDeal(userId, id, request.days)
+        return ApiResponse.success(Unit)
+    }
+
 
     /** 내가 등록한 딜 목록 조회 */
     @GetMapping("/mine")

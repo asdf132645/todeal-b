@@ -8,6 +8,8 @@ data class BoardCommentResponse(
     val userId: Long,
     val nickname: String,
     val content: String,
+    val language: String,               // ✅ 추가: 원문 언어
+    val translatedContent: String?,     // ✅ 추가: 번역된 내용 (nullable)
     val createdAt: String
 ) {
     companion object {
@@ -15,8 +17,10 @@ data class BoardCommentResponse(
             id = entity.id,
             postId = entity.postId,
             userId = entity.userId,
-            nickname = entity.nickname ?: "익명", // ← null safe
+            nickname = entity.nickname ?: "익명",
             content = entity.content,
+            language = entity.language,
+            translatedContent = entity.translatedContent,
             createdAt = entity.createdAt.toString()
         )
     }

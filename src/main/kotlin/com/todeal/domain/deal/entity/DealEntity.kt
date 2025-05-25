@@ -42,6 +42,12 @@ data class DealEntity(
     @Column(name = "region_depth3", nullable = false)
     var regionDepth3: String,
 
+    @Column(name = "is_promoted", nullable = false)
+    var isPromoted: Boolean = false,
+
+    @Column(name = "promotion_expire_at")
+    var promotionExpireAt: LocalDateTime? = null,
+
     var latitude: Double,
     var longitude: Double,
 
