@@ -144,7 +144,7 @@ class BoardService(
             userId = userId,
             content = request.content,
             nickname = request.nickname,
-            language = request.language,
+//            language = request.language,
             translatedContent = null
         )
         val saved = boardCommentRepository.save(comment)
