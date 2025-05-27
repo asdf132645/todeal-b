@@ -19,7 +19,9 @@ class BoardService(
         latitude: Double?,
         longitude: Double?,
         distance: Double?,
-        category: String?
+        category: String?,
+        keyword: String?,
+        field: String?
     ): List<BoardPostResponse> {
         val posts = if (latitude != null && longitude != null && distance != null) {
             val earthRadius = 6371.0
@@ -31,24 +33,44 @@ class BoardService(
             val lngMin = longitude - lngDelta
             val lngMax = longitude + lngDelta
 
-            if (category != null) {
-                boardPostRepository.findWithinDistanceAndCategory(
-                    latitude, longitude,
-                    latMin, latMax, lngMin, lngMax,
-                    distance, category
-                )
-            } else {
-                boardPostRepository.findWithinDistance(
-                    latitude, longitude,
-                    latMin, latMax, lngMin, lngMax,
-                    distance
-                )
+            when {
+                category != null && keyword != null && field != null ->
+                    boardPostRepository.findWithinDistanceCategoryAndKeyword(
+                        latitude, longitude,
+                        latMin, latMax, lngMin, lngMax, distance,
+                        category, keyword, field
+                    )
+                category != null ->
+                    boardPostRepository.findWithinDistanceAndCategory(
+                        latitude, longitude,
+                        latMin, latMax, lngMin, lngMax, distance,
+                        category
+                    )
+                keyword != null && field != null ->
+                    boardPostRepository.findWithinDistanceAndKeyword(
+                        latitude, longitude,
+                        latMin, latMax, lngMin, lngMax, distance,
+                        keyword, field
+                    )
+                else ->
+                    boardPostRepository.findWithinDistance(
+                        latitude, longitude,
+                        latMin, latMax, lngMin, lngMax, distance
+                    )
             }
         } else {
-            if (category != null) {
-                boardPostRepository.findByCategoryOrderByCreatedAtDesc(category)
-            } else {
-                boardPostRepository.findTop100ByOrderByCreatedAtDesc()
+            when {
+                category != null && keyword != null && field != null ->
+                    boardPostRepository.findByCategoryAndKeyword(category, keyword, field)
+
+                category != null ->
+                    boardPostRepository.findByCategoryOrderByCreatedAtDesc(category)
+
+                keyword != null && field != null ->
+                    boardPostRepository.findByKeyword(field, keyword)
+
+                else ->
+                    boardPostRepository.findTop100ByOrderByCreatedAtDesc()
             }
         }
 
@@ -56,7 +78,8 @@ class BoardService(
     }
 
     fun getPost(id: Long): BoardPostResponse {
-        val post = boardPostRepository.findById(id).orElseThrow { IllegalArgumentException("게시글이 존재하지 않습니다.") }
+        val post = boardPostRepository.findById(id)
+            .orElseThrow { IllegalArgumentException("게시글이 존재하지 않습니다.") }
         return BoardPostResponse.from(post)
     }
 
@@ -66,14 +89,15 @@ class BoardService(
             userId = userId,
             title = request.title,
             content = request.content,
-            category = request.category,               // ✅ 이거 추가해야 함
+            category = request.category,
             nickname = request.nickname,
             latitude = request.latitude,
             longitude = request.longitude,
             region = request.region,
             language = request.language,
             translatedTitle = request.translatedTitle,
-            translatedContent = request.translatedContent
+            translatedContent = request.translatedContent,
+            imageUrls = request.imageUrls // ✅ 추가
         )
         val saved = boardPostRepository.save(post)
         return BoardPostResponse.from(saved)
@@ -89,7 +113,7 @@ class BoardService(
         post.apply {
             title = request.title
             content = request.content
-            category = request.category           // ✅ 추가된 부분
+            category = request.category
             latitude = request.latitude
             longitude = request.longitude
             region = request.region
@@ -97,6 +121,7 @@ class BoardService(
             language = request.language
             translatedTitle = request.translatedTitle
             translatedContent = request.translatedContent
+            imageUrls = request.imageUrls // ✅ 추가
             updatedAt = java.time.LocalDateTime.now()
         }
 
@@ -120,17 +145,19 @@ class BoardService(
             content = request.content,
             nickname = request.nickname,
             language = request.language,
-            translatedContent = null // 자동 번역 저장 시 이 부분을 확장해도 됨
+            translatedContent = null
         )
         val saved = boardCommentRepository.save(comment)
         return BoardCommentResponse.from(saved)
     }
 
     fun getComments(postId: Long): List<BoardCommentResponse> {
-        return boardCommentRepository.findByPostId(postId).map { BoardCommentResponse.from(it) }
+        return boardCommentRepository.findByPostId(postId)
+            .map { BoardCommentResponse.from(it) }
     }
 
     fun getMyPosts(userId: Long): List<BoardPostResponse> {
-        return boardPostRepository.findByUserId(userId).map { BoardPostResponse.from(it) }
+        return boardPostRepository.findByUserId(userId)
+            .map { BoardPostResponse.from(it) }
     }
 }

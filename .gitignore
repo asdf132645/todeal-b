@@ -46,4 +46,9 @@ out/
 src/test/resources/firebase-adminsdk.json
 src/main/resources/firebase-adminsdk.json
 
+# ==========================
+# 🔒 민감 파일 Git 제외 (운영 secrets)
+# ==========================
 .env
+src/main/resources/application-prod.yml
+src/main/resources/application.yml

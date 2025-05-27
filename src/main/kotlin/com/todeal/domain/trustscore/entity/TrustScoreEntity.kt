@@ -1,8 +1,10 @@
 // ✅ TrustScoreEntity.kt
 package com.todeal.domain.trustscore.entity
 
+import com.todeal.domain.trustscore.model.TrustScoreType
 import jakarta.persistence.*
 import java.time.LocalDateTime
+
 
 @Entity
 @Table(name = "trust_score")
@@ -19,8 +21,15 @@ data class TrustScoreEntity(
     @Column(nullable = false)
     val dealId: Long,
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    val type: TrustScoreType,
+
     @Column(nullable = false)
     val isPositive: Boolean,
+
+    @Column(columnDefinition = "TEXT")
+    val comment: String? = null,
 
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()

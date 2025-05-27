@@ -37,27 +37,29 @@ class FirebasePushSender(
     }
 
     fun sendPush(userId: Long, title: String, body: String, data: Map<String, String>) {
-        val fcmToken = redisFcmTokenService.getToken(userId)
+        val tokens = redisFcmTokenService.getAllTokens(userId)
 
-        if (fcmToken == null) {
+        if (tokens.isEmpty()) {
             logFailure(userId, title, body, "N/A", "FCM 토큰 없음")
             return
         }
 
-        val message = Message.builder()
-            .setToken(fcmToken)
-            .setNotification(Notification.builder().setTitle(title).setBody(body).build())
-            .putAllData(data)
-            .build()
+        tokens.forEach { token ->
+            val message = Message.builder()
+                .setToken(token)
+                .setNotification(Notification.builder().setTitle(title).setBody(body).build())
+                .putAllData(data)
+                .build()
 
-        try {
-            val response = FirebaseMessaging.getInstance().send(message)
-            println("📨 FCM 전송 성공: $response")
-            logSuccess(userId, title, body, fcmToken, response)
-
-        } catch (e: Exception) {
-            println("❌ FCM 전송 실패: ${e.message}")
-            logFailure(userId, title, body, fcmToken, e.message ?: "Unknown error")
+            try {
+                val response = FirebaseMessaging.getInstance().send(message)
+                println("📨 FCM 전송 성공: $response")
+                logSuccess(userId, title, body, token, response)
+            } catch (e: Exception) {
+                println("❌ FCM 전송 실패: ${e.message}")
+                redisFcmTokenService.removeToken(userId, token)
+                logFailure(userId, title, body, token, e.message ?: "Unknown error")
+            }
         }
     }
 

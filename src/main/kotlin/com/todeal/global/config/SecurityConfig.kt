@@ -1,6 +1,7 @@
 package com.todeal.global.config
 
 import com.todeal.global.security.JwtAuthFilter
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -14,7 +15,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
-import org.springframework.beans.factory.annotation.Value
 
 @Configuration
 @EnableWebSecurity
@@ -23,19 +23,18 @@ class SecurityConfig(
 ) {
 
     @Value("\${frontend.base-url}")
-    private lateinit var frontendBaseUrl: String
-
+    private lateinit var allowedOrigins: List<String>
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .cors { }
+            .cors { it.configurationSource(corsConfigurationSource()) }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
                 it
                     .requestMatchers(
-                        "/ws/**",                         // ✅ WebSocket 허용
+                        "/ws/**",
                         "/api/users/signup",
                         "/api/userAuth/reset-password-request",
                         "/api/users/check-email",
@@ -47,8 +46,8 @@ class SecurityConfig(
                         "/api/users/login",
                         "/api/auth/signup",
                         "/api/auth/refresh-token",
-                        "/api/hashtags/popular",          // ✅ 인기 해시태그 공개
-                        "/api/deals/nearby",                  // ✅ 딜 위치 검색 공개
+                        "/api/hashtags/popular",
+                        "/api/deals/nearby",
                         "/api/deals/**"
                     ).permitAll()
                     .anyRequest().authenticated()
@@ -62,14 +61,14 @@ class SecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
-        val config = CorsConfiguration()
-        config.allowCredentials = true
-        config.allowedOrigins = listOf(frontendBaseUrl)  // ✅ 환경에서 주입된 프론트 URL 사용
-        config.allowedMethods = listOf("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")
-        config.allowedHeaders = listOf("*")
+        val configuration = CorsConfiguration()
+        configuration.allowCredentials = true
+        configuration.allowedOrigins = allowedOrigins
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+        configuration.allowedHeaders = listOf("*")
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", config)
+        source.registerCorsConfiguration("/**", configuration)
         return source
     }
 

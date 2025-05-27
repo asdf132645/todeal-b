@@ -2,8 +2,11 @@
 package com.todeal.domain.trustscore.repository
 
 import com.todeal.domain.trustscore.entity.TrustScoreEntity
+import com.todeal.domain.trustscore.model.TrustScoreType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 
 interface TrustScoreRepository : JpaRepository<TrustScoreEntity, Long> {
 
@@ -19,6 +22,9 @@ interface TrustScoreRepository : JpaRepository<TrustScoreEntity, Long> {
     )
     fun getScoreStatsForUsers(userIds: List<Long>): List<TrustScoreProjection>
     fun existsByFromUserIdAndToUserIdAndDealId(fromUserId: Long, toUserId: Long, dealId: Long): Boolean
+    fun findByToUserIdAndType(userId: Long, type: TrustScoreType, pageable: Pageable): Page<TrustScoreEntity>
+    fun findByToUserId(userId: Long, pageable: Pageable): Page<TrustScoreEntity>
+
 }
 
 interface TrustScoreProjection {

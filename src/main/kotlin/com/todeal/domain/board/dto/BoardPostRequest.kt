@@ -16,5 +16,7 @@ data class BoardPostRequest(
     val translatedTitle: String? = null,
 
     // ✅ 번역된 내용 (선택)
-    val translatedContent: String? = null
+    val translatedContent: String? = null,
+
+    val imageUrls: List<String> = emptyList()
 )

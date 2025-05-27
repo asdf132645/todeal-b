@@ -6,6 +6,7 @@ import com.todeal.global.response.ApiResponse
 import com.todeal.infrastructure.redis.RedisFcmTokenService
 import org.springframework.web.bind.annotation.*
 import com.todeal.domain.auth.JwtProvider
+import jakarta.servlet.http.HttpServletRequest
 
 @RestController
 @RequestMapping("/users")
@@ -16,14 +17,19 @@ class UserController(
 ) {
 
     @PostMapping("/signup")
-    fun signup(@RequestBody request: UserSignupRequest): ApiResponse<UserResponse> {
+    fun signup(@RequestBody request: UserSignupRequest): ApiResponse<LoginResponse> {
         val result = userService.signup(request)
         return ApiResponse.success(result)
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: UserLoginRequest): ApiResponse<LoginResponse> {
-        val result = userService.login(request)
+    fun login(
+        servletRequest: HttpServletRequest,
+        @RequestBody body: UserLoginRequest
+    ): ApiResponse<LoginResponse> {
+        val ip = servletRequest.remoteAddr
+        val loginRequest = body.copy(ip = ip) // ✅ device는 body에서 받은 값 그대로 유지
+        val result = userService.login(loginRequest)
         return ApiResponse.success(result)
     }
 
@@ -51,7 +57,7 @@ class UserController(
             return ApiResponse.fail("토큰 누락") // ✅ 반드시 <String> 명시
         }
 
-        redisFcmTokenService.saveToken(userId, token)
+        redisFcmTokenService.addToken(userId, token)
         return ApiResponse.success("토큰 등록 완료")
     }
 
@@ -59,7 +65,7 @@ class UserController(
     fun deleteFcmToken(
         @RequestHeader("X-USER-ID") userId: Long
     ): ApiResponse<String> {
-        redisFcmTokenService.deleteToken(userId)
+        redisFcmTokenService.deleteAllTokens(userId)
         return ApiResponse.success("토큰 삭제 완료")
     }
 

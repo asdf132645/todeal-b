@@ -42,6 +42,12 @@ data class BoardPostEntity(
     @Column(nullable = true, columnDefinition = "TEXT")
     var translatedContent: String? = null,
 
+    @ElementCollection
+    @CollectionTable(name = "board_post_images", joinColumns = [JoinColumn(name = "board_post_id")])
+    @Column(name = "image_url")
+    var imageUrls: List<String> = emptyList(),
+
+
     var commentCount: Int = 0,
     var viewCount: Int = 0,
 

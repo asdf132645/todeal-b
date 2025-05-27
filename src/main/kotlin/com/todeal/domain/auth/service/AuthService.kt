@@ -3,6 +3,10 @@ package com.todeal.domain.auth.service
 import com.todeal.domain.auth.JwtProvider
 import com.todeal.domain.auth.dto.LoginResponse
 import com.todeal.domain.auth.dto.SignupRequest
+import com.todeal.domain.auth.entity.RefreshTokenEntity
+import com.todeal.domain.auth.repository.RefreshTokenRepository
+import com.todeal.domain.log.entity.LoginLogEntity
+import com.todeal.domain.log.repository.LoginLogRepository
 import com.todeal.domain.user.dto.UserResponse
 import com.todeal.domain.user.entity.UserAgreementEntity
 import com.todeal.domain.user.entity.UserEntity
@@ -14,31 +18,44 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.LocalDateTime
 
 @Service
 class AuthService(
     private val jwtProvider: JwtProvider,
     private val userRepository: UserRepository,
-    private val userAgreementRepository: UserAgreementRepository  // ✅ 추가
+    private val userAgreementRepository: UserAgreementRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val loginLogRepository: LoginLogRepository
 ) {
 
-    fun kakaoLogin(kakaoAccessToken: String): Any {
+    fun kakaoLogin(kakaoAccessToken: String, ip: String?, device: String?): Any {
         val kakaoId = fetchKakaoUserIdFromApi(kakaoAccessToken)
         val existing = userRepository.findByKakaoId(kakaoId)
 
         return if (existing != null) {
             val accessToken = jwtProvider.generateAccessToken(existing.id)
-            val refreshToken = jwtProvider.generateRefreshToken(existing.id)
+            val refreshToken = jwtProvider.generateRefreshToken()
+
+            saveOrUpdateRefreshToken(existing.id, refreshToken, device ?: "KAKAO")
+
+            loginLogRepository.save(
+                LoginLogEntity(
+                    userId = existing.id,
+                    ipAddress = ip,
+                    deviceInfo = device ?: "KAKAO"
+                )
+            )
+
             LoginResponse(accessToken, refreshToken, UserResponse.from(existing))
         } else {
             mapOf("isNewUser" to true, "tempToken" to kakaoAccessToken)
         }
     }
 
-    fun signupWithKakao(kakaoAccessToken: String, req: SignupRequest): String {
+    fun signupWithKakao(kakaoAccessToken: String, req: SignupRequest): Pair<String, String> {
         val kakaoId = fetchKakaoUserIdFromApi(kakaoAccessToken)
 
-        // ✅ 중복 가입 방지
         if (userRepository.existsByKakaoId(kakaoId)) {
             throw IllegalArgumentException("이미 가입된 카카오 계정입니다.")
         }
@@ -60,15 +77,35 @@ class AuthService(
 
         val savedUser = userRepository.save(user)
 
-        // ✅ 약관 동의 내역 저장
         val agreements = req.agreements.map { type ->
             UserAgreementEntity(user = savedUser, type = type)
         }
         userAgreementRepository.saveAll(agreements)
 
-        return jwtProvider.generateAccessToken(savedUser.id)
+        val accessToken = jwtProvider.generateAccessToken(savedUser.id)
+        val refreshToken = jwtProvider.generateRefreshToken()
+
+        saveOrUpdateRefreshToken(savedUser.id, refreshToken, "KAKAO")
+
+        return accessToken to refreshToken
     }
 
+    fun refreshAccessToken(refreshToken: String): Pair<String, String> {
+        val stored = refreshTokenRepository.findByToken(refreshToken)
+            ?: throw IllegalArgumentException("리프레시 토큰이 유효하지 않습니다.")
+
+        if (stored.expireAt.isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(stored)
+            throw IllegalStateException("리프레시 토큰이 만료되었습니다.")
+        }
+
+        val newAccessToken = jwtProvider.generateAccessToken(stored.userId)
+        val newRefreshToken = jwtProvider.generateRefreshToken()
+
+        saveOrUpdateRefreshToken(stored.userId, newRefreshToken, stored.deviceInfo)
+
+        return newAccessToken to newRefreshToken
+    }
 
     private fun fetchKakaoUserIdFromApi(kakaoAccessToken: String): Long {
         val client = HttpClient.newHttpClient()
@@ -79,7 +116,6 @@ class AuthService(
             .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-
         if (response.statusCode() != 200) {
             throw IllegalArgumentException("카카오 사용자 정보를 가져오지 못했습니다. 응답 코드: ${response.statusCode()}")
         }
@@ -88,12 +124,27 @@ class AuthService(
         return json.getLong("id")
     }
 
-    fun refreshAccessToken(refreshToken: String): String {
-        if (refreshToken.isBlank() || refreshToken.count { it == '.' } != 2) {
-            throw IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.")
-        }
+    private fun saveOrUpdateRefreshToken(userId: Long, token: String, device: String?) {
+        val safeDevice = device ?: "UNKNOWN"
 
-        val userId = jwtProvider.getUserIdFromToken(refreshToken)
-        return jwtProvider.generateAccessToken(userId)
+        val existing = refreshTokenRepository.findByUserId(userId)
+        if (existing != null) {
+            val updated = existing.copy(
+                token = token,
+                expireAt = LocalDateTime.now().plusDays(14),
+                deviceInfo = safeDevice
+            )
+            refreshTokenRepository.save(updated)
+        } else {
+            refreshTokenRepository.save(
+                RefreshTokenEntity(
+                    userId = userId,
+                    token = token,
+                    expireAt = LocalDateTime.now().plusDays(14),
+                    deviceInfo = safeDevice
+                )
+            )
+        }
     }
+
 }
