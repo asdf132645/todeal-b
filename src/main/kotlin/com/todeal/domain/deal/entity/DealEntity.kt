@@ -67,7 +67,16 @@ data class DealEntity(
     var createdAt: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "updated_at")
-    var updatedAt: LocalDateTime = LocalDateTime.now()
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "translated_title")
+    var translatedTitle: String? = null,
+
+    @Column(name = "translated_content", columnDefinition = "TEXT")
+    var translatedContent: String? = null,
+
+    @Column(name = "language")
+    var language: String? = null,
 ) {
     @PrePersist
     fun onCreate() {
@@ -93,7 +102,10 @@ data class DealEntity(
         regionDepth3: String,
         latitude: Double,
         longitude: Double,
-        images: List<String>
+        images: List<String>,
+        translatedTitle: String?,
+        translatedContent: String?,
+        language: String?
     ) {
         this.title = title
         this.description = description
@@ -108,5 +120,9 @@ data class DealEntity(
         this.latitude = latitude
         this.longitude = longitude
         this.images = images
+        this.translatedTitle = translatedTitle
+        this.translatedContent = translatedContent
+        this.language = language
+
     }
 }

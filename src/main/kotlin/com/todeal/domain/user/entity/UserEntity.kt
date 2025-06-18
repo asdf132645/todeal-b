@@ -14,13 +14,13 @@ data class UserEntity(
     val kakaoId: Long? = null,  // 카카오 전용
 
     @Column(nullable = true, unique = true)
-    val email: String? = null,  // 일반 로그인 전용
+    val email: String? = null,
 
     @Column(nullable = true)
     var password: String? = null,  // 일반 로그인 전용 (BCrypt 해시 저장)
 
     @Column(nullable = false)
-    val nickname: String,
+    val nickname: String?,
 
     val phone: String? = null,
     val profileImageUrl: String? = null,

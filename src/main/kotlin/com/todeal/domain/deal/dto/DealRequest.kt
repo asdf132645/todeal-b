@@ -16,5 +16,8 @@ data class DealRequest(
     val regionDepth3: String,
     val latitude: Double,
     val longitude: Double,
-    val images: List<String> = emptyList()
+    val images: List<String> = emptyList(),
+    val translatedTitle: String? = null,
+    val translatedContent: String? = null,
+    val language: String? = null
 )

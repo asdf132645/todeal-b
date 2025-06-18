@@ -1,5 +1,6 @@
 package com.todeal.domain.deal.controller
 
+import com.todeal.common.dto.CursorPageResponse
 import com.todeal.domain.deal.dto.*
 import com.todeal.domain.deal.mapper.toResponse
 import com.todeal.domain.deal.service.DealService
@@ -7,6 +8,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.getByIdOrThrow
+import java.time.ZoneId
 
 @RestController
 @RequestMapping("/deals")
@@ -48,15 +50,25 @@ class DealController(
         @RequestParam type: String?,
         @RequestParam(required = false) hashtags: List<String>?,
         @RequestParam(defaultValue = "created") sort: String,
-        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(required = false) cursor: Long?, // createdAt 기준 millis
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) lat: Double?,
         @RequestParam(required = false) lng: Double?,
-        @RequestParam(defaultValue = "2") radius: Int
-    ): ApiResponse<List<Map<String, Any>>> {
-        val result = dealService.getFilteredDeals(type, hashtags, sort, page, size, lat, lng, radius)
-        return ApiResponse.success(result.map { it.toResponse() })
+        @RequestParam(defaultValue = "2") radius: Int,
+        @RequestParam(defaultValue = "true") useLocation: Boolean
+    ): ApiResponse<CursorPageResponse<Map<String, Any>>> {
+        val result = dealService.getFilteredDeals(type, hashtags, sort, cursor, size, lat, lng, radius, useLocation)
+        val items = result.map { it.toResponse() }
+
+        val nextCursor = result.lastOrNull()?.createdAt
+            ?.atZone(ZoneId.systemDefault())
+            ?.toInstant()
+            ?.toEpochMilli()
+
+        return ApiResponse.success(CursorPageResponse(items, nextCursor))
     }
+
+
 
     // 유료플랜을 위한 상위노출 딜
     @PostMapping("/{id}/promote")
@@ -82,12 +94,21 @@ class DealController(
     fun searchDeals(
         @RequestParam type: String,
         @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) exclude: String?, // ✅ 추가됨
-        @RequestParam(defaultValue = "1") page: Int
-    ): ApiResponse<List<DealResponse>> {
-        val results = dealService.searchDealsByTypeAndKeyword(type, keyword, exclude, page)
-        return ApiResponse.success(results)
+        @RequestParam(required = false) exclude: String?,
+        @RequestParam(required = false) cursorId: Long?,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(required = false) lat: Double?,
+        @RequestParam(required = false) lng: Double?,
+        @RequestParam(defaultValue = "5") radius: Int,
+        @RequestParam(defaultValue = "false") useLocation: Boolean
+    ): ApiResponse<Map<String, Any?>> {
+        return dealService.searchDealsByCursor(
+            type, keyword, exclude, cursorId, pageSize, lat, lng, radius, useLocation
+        )
     }
+
+
+
 
     /** 딜 수정 */
     @PutMapping("/{id}")

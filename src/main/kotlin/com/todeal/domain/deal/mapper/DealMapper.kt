@@ -5,6 +5,7 @@ import com.todeal.domain.deal.dto.DealInternalDto
 import com.todeal.domain.deal.dto.DealResponse
 import com.todeal.domain.deal.entity.DealEntity
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 // ✅ 프론트 JSON 응답용 Map
 fun DealEntity.toResponse(): Map<String, Any> {
@@ -13,7 +14,7 @@ fun DealEntity.toResponse(): Map<String, Any> {
         "title" to title,
         "description" to description,
         "type" to type,
-        "pricingType" to pricingType.name, // ✅ 추가
+        "pricingType" to pricingType.name,
         "startPrice" to startPrice,
         "currentPrice" to currentPrice,
         "deadline" to deadline,
@@ -27,15 +28,18 @@ fun DealEntity.toResponse(): Map<String, Any> {
         "images" to images,
         "createdAt" to createdAt,
         "updatedAt" to updatedAt,
-        "isExpired" to (deadline.isBefore(LocalDateTime.now()) || winnerBidId != null)
+        "isExpired" to (deadline.isBefore(LocalDateTime.now()) || winnerBidId != null),
+        "cursor" to createdAt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() // ✅ 추가
     )
 
-    winnerBidId?.let {
-        result["winnerBidId"] = it
-    }
+    winnerBidId?.let { result["winnerBidId"] = it }
+    translatedTitle?.let { result["translatedTitle"] = it }
+    translatedContent?.let { result["translatedContent"] = it }
+    language?.let { result["language"] = it }
 
     return result
 }
+
 
 // ✅ DTO 변환용 (Service → Controller 응답)
 fun DealEntity.toDto(): DealResponse {
@@ -44,31 +48,7 @@ fun DealEntity.toDto(): DealResponse {
         title = this.title,
         description = this.description,
         type = this.type,
-        pricingType = this.pricingType, // ✅ 추가
-        startPrice = this.startPrice,
-        currentPrice = this.currentPrice,
-        deadline = this.deadline,
-        region = this.region,
-        regionDepth1 = this.regionDepth1,
-        regionDepth2 = this.regionDepth2,
-        regionDepth3 = this.regionDepth3,
-        latitude = this.latitude,
-        longitude = this.longitude,
-        images = this.images,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt,
-        winnerBidId = this.winnerBidId
-    )
-}
-
-// ✅ Service 내부 로직용 DTO
-fun DealEntity.toServiceDto(): DealInternalDto {
-    return DealInternalDto(
-        id = this.id,
-        title = this.title,
-        description = this.description,
-        type = this.type,
-        pricingType = this.pricingType, // ✅ 추가
+        pricingType = this.pricingType,
         startPrice = this.startPrice,
         currentPrice = this.currentPrice,
         deadline = this.deadline,
@@ -82,6 +62,37 @@ fun DealEntity.toServiceDto(): DealInternalDto {
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         winnerBidId = this.winnerBidId,
-        ownerId = this.userId
+        translatedTitle = this.translatedTitle,
+        translatedContent = this.translatedContent,
+        language = this.language,
+        cursor = this.createdAt.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() // 추가
+    )
+}
+
+// ✅ Service 내부 로직용 DTO
+fun DealEntity.toServiceDto(): DealInternalDto {
+    return DealInternalDto(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        type = this.type,
+        pricingType = this.pricingType,
+        startPrice = this.startPrice,
+        currentPrice = this.currentPrice,
+        deadline = this.deadline,
+        region = this.region,
+        regionDepth1 = this.regionDepth1,
+        regionDepth2 = this.regionDepth2,
+        regionDepth3 = this.regionDepth3,
+        latitude = this.latitude,
+        longitude = this.longitude,
+        images = this.images,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+        winnerBidId = this.winnerBidId,
+        ownerId = this.userId,
+        translatedTitle = this.translatedTitle,
+        translatedContent = this.translatedContent,
+        language = this.language
     )
 }

@@ -22,5 +22,9 @@ data class DealInternalDto(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val winnerBidId: Long? = null,
-    val ownerId: Long
+    val ownerId: Long,
+    val translatedTitle: String? = null,
+    val translatedContent: String? = null,
+    val language: String? = null
+
 )

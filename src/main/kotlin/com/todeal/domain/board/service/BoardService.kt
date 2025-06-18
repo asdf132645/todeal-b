@@ -5,6 +5,7 @@ import com.todeal.domain.board.entity.BoardCommentEntity
 import com.todeal.domain.board.entity.BoardPostEntity
 import com.todeal.domain.board.repository.BoardCommentRepository
 import com.todeal.domain.board.repository.BoardPostRepository
+import com.todeal.global.redis.RedisCacheService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.math.*
@@ -12,7 +13,9 @@ import kotlin.math.*
 @Service
 class BoardService(
     private val boardPostRepository: BoardPostRepository,
-    private val boardCommentRepository: BoardCommentRepository
+    private val boardCommentRepository: BoardCommentRepository,
+    private val redisCacheService: RedisCacheService
+
 ) {
 
     fun getPosts(
@@ -77,9 +80,21 @@ class BoardService(
         return posts.map { BoardPostResponse.from(it) }
     }
 
-    fun getPost(id: Long): BoardPostResponse {
+    @Transactional
+    fun getPost(id: Long, viewerIp: String?, userId: Long?): BoardPostResponse {
         val post = boardPostRepository.findById(id)
             .orElseThrow { IllegalArgumentException("게시글이 존재하지 않습니다.") }
+
+        val key = when {
+            userId != null -> "view:post:$id:user:$userId"
+            viewerIp != null -> "view:post:$id:ip:$viewerIp"
+            else -> null
+        }
+
+        if (key != null && redisCacheService.isFirstView(key, 3600)) {
+            post.viewCount += 1
+        }
+
         return BoardPostResponse.from(post)
     }
 

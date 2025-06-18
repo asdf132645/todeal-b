@@ -36,9 +36,13 @@ class SecurityConfig(
                     .requestMatchers(
                         "/ws/**",
                         "/api/users/signup",
+                        "/api/emailVerification/send-verification",
+                        "/api/emailVerification/verify-code",
+                        "/api/emailVerification/check-email",
                         "/api/userAuth/reset-password-request",
                         "/api/users/check-email",
                         "/api/auth/kakao-login",
+                        "/api/board/**",
                         "/api/users/check-nickname",
                         "/api/userAuth/reset-password",
                         "/api/barter-bids/deal/**",

@@ -4,6 +4,7 @@ package com.todeal.domain.board.controller
 import com.todeal.domain.board.dto.*
 import com.todeal.domain.board.service.BoardService
 import com.todeal.global.response.ApiResponse
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -26,8 +27,16 @@ class BoardController(
     }
 
     @GetMapping("/{id}")
-    fun getPost(@PathVariable id: Long): ApiResponse<BoardPostResponse> {
-        return ApiResponse.success(boardService.getPost(id))
+    fun getPost(
+        @PathVariable id: Long,
+        request: HttpServletRequest,
+        @RequestHeader(value = "X-USER-ID", required = false) userId: Long?
+    ): ApiResponse<BoardPostResponse> {
+        val rawIp = request.getHeader("X-Forwarded-For")
+        val ip = rawIp?.split(",")?.firstOrNull()?.trim() ?: request.remoteAddr
+
+        val post = boardService.getPost(id, ip, userId)
+        return ApiResponse.success(post)
     }
 
     @PostMapping

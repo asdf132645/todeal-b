@@ -7,7 +7,7 @@ data class UserDto(
     val id: Long,
     val email: String?,
     val kakaoId: Long?,
-    val nickname: String,
+    val nickname: String?,
     val phone: String?,
     val profileImageUrl: String?,
     val role: String,

@@ -8,6 +8,7 @@ import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.DealQueryRepository
 import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.repository.getByIdOrThrow
+import com.todeal.global.response.ApiResponse
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -25,7 +26,7 @@ class DealService(
             title = request.title,
             description = request.description,
             type = request.type,
-            pricingType = request.pricingType, // ✅ 여기에 추가
+            pricingType = request.pricingType,
             userId = userId,
             startPrice = request.startPrice,
             currentPrice = request.startPrice,
@@ -36,10 +37,14 @@ class DealService(
             regionDepth3 = request.regionDepth3,
             latitude = request.latitude,
             longitude = request.longitude,
-            images = request.images
+            images = request.images,
+            translatedTitle = request.translatedTitle,
+            translatedContent = request.translatedContent,
+            language = request.language
         )
         return DealDto.from(dealRepository.save(deal))
     }
+
 
 
     fun getDealById(id: Long): DealDto {
@@ -52,40 +57,93 @@ class DealService(
         type: String?,
         hashtags: List<String>?,
         sort: String,
-        page: Int,
+        cursor: Long?,
         size: Int,
         lat: Double?,
         lng: Double?,
-        radius: Int
+        radius: Int,
+        useLocation: Boolean
     ): List<DealEntity> {
-        return dealQueryRepository.findFilteredDeals(type, hashtags, sort, page, size, lat, lng, radius)
+        val (latFilter, lngFilter, radiusFilter) = if (useLocation) Triple(lat, lng, radius) else Triple(null, null, 0)
+        return dealQueryRepository.findFilteredDeals(type, hashtags, sort, cursor, size, latFilter, lngFilter, radiusFilter)
     }
+
+
 
     fun searchDealsByTypeAndKeyword(
         type: String,
         keyword: String?,
         exclude: String?,
-        page: Int
+        pageSize: Int?,        // ✅ nullable → default 적용
+        page: Int,
+        lat: Double?,
+        lng: Double?,
+        radius: Int,
+        useLocation: Boolean
     ): List<DealResponse> {
-        val offset = (page - 1) * 20
-
-        val deals = when {
-            keyword.isNullOrBlank() && exclude.isNullOrBlank() -> {
-                dealRepository.findByType(type, offset)
-            }
-            keyword.isNullOrBlank() && !exclude.isNullOrBlank() -> {
-                dealRepository.findByTypeExcludingKeyword(type, exclude, offset)
-            }
-            !keyword.isNullOrBlank() && exclude.isNullOrBlank() -> {
-                dealRepository.findByTypeAndKeyword(type, keyword, offset)
-            }
-            else -> {
-                dealRepository.findByTypeAndKeywordExcluding(type, keyword!!, exclude!!, offset)
-            }
+        val size = pageSize ?: 20                          // ✅ 기본값 설정
+        val offset = (page - 1) * size                     // ✅ pageSize 반영한 offset 계산
+        val (latFilter, lngFilter, radiusFilter) = if (useLocation) {
+            Triple(lat, lng, radius)
+        } else {
+            Triple(null, null, 0)
         }
+
+        val deals = dealQueryRepository.searchDealsByTypeAndKeywordWithLocation(
+            type = type,
+            keyword = keyword,
+            exclude = exclude,
+            offset = offset,
+            limit = size,                                    // ✅ pageSize → limit 파라미터 전달
+            lat = latFilter,
+            lng = lngFilter,
+            radius = radiusFilter
+        )
 
         return deals.map { it.toDto() }
     }
+
+    fun searchDealsByCursor(
+        type: String,
+        keyword: String?,
+        exclude: String?,
+        cursorId: Long?,
+        pageSize: Int,
+        lat: Double?,
+        lng: Double?,
+        radius: Int,
+        useLocation: Boolean
+    ): ApiResponse<Map<String, Any?>> {
+        val (latFilter, lngFilter, radiusFilter) = if (useLocation) {
+            Triple(lat, lng, radius)
+        } else {
+            Triple(null, null, 0)
+        }
+
+        val deals = dealQueryRepository.searchByCursor(
+            type = type,
+            keyword = keyword,
+            exclude = exclude,
+            cursorId = cursorId,
+            limit = pageSize + 1,  // 다음 페이지 확인용 +1
+            lat = latFilter,
+            lng = lngFilter,
+            radius = radiusFilter
+        )
+
+        val hasNext = deals.size > pageSize
+        val sliced = if (hasNext) deals.dropLast(1) else deals
+
+        val result: Map<String, Any?> = mapOf(
+            "items" to sliced.map { it.toDto() },
+            "nextCursorId" to sliced.lastOrNull()?.id,
+            "hasNext" to hasNext
+        )
+
+        return ApiResponse.success(result)
+    }
+
+
 
     @Transactional
     fun deleteDealWithChats(userId: Long, dealId: Long) {
@@ -120,7 +178,7 @@ class DealService(
             title = request.title,
             description = request.description,
             type = request.type,
-            pricingType = request.pricingType, // ✅ 여기에 추가
+            pricingType = request.pricingType,
             startPrice = request.startPrice,
             deadline = request.deadline,
             region = request.region,
@@ -129,7 +187,10 @@ class DealService(
             regionDepth3 = request.regionDepth3,
             latitude = request.latitude,
             longitude = request.longitude,
-            images = request.images
+            images = request.images,
+            translatedTitle = request.translatedTitle,
+            translatedContent = request.translatedContent,
+            language = request.language
         )
 
         return DealDto.from(deal)

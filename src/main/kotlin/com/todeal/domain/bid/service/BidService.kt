@@ -128,28 +128,26 @@ class BidService(
     }
 
     fun getBidsOnMyDeals(userId: Long, page: Int, size: Int, keyword: String?): Page<DealBidGroupDto> {
-        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "created_at")) // ← 주의: nativeQuery 기준으로 created_at
 
-        // 1. 내가 등록한 딜 중 검색어 필터링
-        val myDealsPage = if (!keyword.isNullOrBlank()) {
-            dealRepository.findByUserIdAndTitleContainingIgnoreCase(userId, keyword, pageable)
-        } else {
-            dealRepository.findByUserId(userId, pageable)
-        }
+        // ✅ nativeQuery 기반 입찰 있는 딜 + 검색어 필터 페이징
+        val myDealsPage = bidRepository.findMyDealsWithBidsNative(userId, keyword, pageable)
 
-        // 2. 딜 ID 목록
+        // ✅ 딜 ID 추출
         val dealIds = myDealsPage.content.map { it.id }
 
-        // 3. 해당 딜들의 입찰 목록
+        if (dealIds.isEmpty()) {
+            return PageImpl(emptyList(), pageable, myDealsPage.totalElements)
+        }
+
+        // ✅ 딜별 입찰 목록 + 사용자 정보
         val bids = bidRepository.findByDealIdIn(dealIds)
         val userIds = bids.map { it.userId }.toSet()
         val userMap = userRepository.findByIdIn(userIds).associateBy { it.id }
 
-        // 4. 입찰이 존재하는 딜만 그룹핑
-        val grouped = myDealsPage.content.mapNotNull { deal ->
+        // ✅ 딜 기준으로 그룹핑
+        val grouped = myDealsPage.content.map { deal ->
             val bidsOnDeal = bids.filter { it.dealId == deal.id }
-            if (bidsOnDeal.isEmpty()) return@mapNotNull null
-
             DealBidGroupDto(
                 deal = deal.toDto(),
                 bids = bidsOnDeal.map { bid ->
@@ -161,6 +159,8 @@ class BidService(
 
         return PageImpl(grouped, pageable, myDealsPage.totalElements)
     }
+
+
 
 
     @Transactional

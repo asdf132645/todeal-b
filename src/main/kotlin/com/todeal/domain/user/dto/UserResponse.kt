@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 data class UserResponse(
     val id: Long,
     val email: String?, // nullable 허용
-    val nickname: String,
+    val nickname: String?,
     val profileImageUrl: String?,
     val role: String,
     val isPremium: Boolean,

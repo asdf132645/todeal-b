@@ -21,5 +21,11 @@ data class DealResponse(
     val images: List<String>,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val winnerBidId: Long? = null
+    val winnerBidId: Long? = null,
+    val translatedTitle: String? = null,
+    val translatedContent: String? = null,
+    val language: String? = null,
+
+    // ✅ 커서 필드 추가 (millis 단위 timestamp)
+    val cursor: Long = createdAt.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
 )

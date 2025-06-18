@@ -4,8 +4,8 @@ import com.todeal.domain.user.entity.UserEntity
 
 data class LoginUserDto(
     val id: Long,
-    val email: String,
-    val nickname: String,               // ✅ 추가
+    val email: String?,
+    val nickname: String?,               // ✅ 추가
     val isPremium: Boolean              // (선택) 유료 여부까지 줄 수 있음
 ) {
     companion object {

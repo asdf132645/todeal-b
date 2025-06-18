@@ -15,4 +15,10 @@ class UploadController(
         val imageUrl = s3UploadService.upload(file)
         return ApiResponse.success(imageUrl)
     }
+
+    @DeleteMapping("/image")
+    fun deleteImage(@RequestParam imageUrl: String): ApiResponse<String> {
+        s3UploadService.delete(imageUrl)
+        return ApiResponse.success("이미지 삭제 완료")
+    }
 }

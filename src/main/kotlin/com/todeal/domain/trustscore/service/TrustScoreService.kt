@@ -17,11 +17,12 @@ class TrustScoreService(
     private val userRepository: UserRepository,
     private val dealRepository: DealRepository
 ) {
+
     fun getReviewsForUser(userId: Long, type: TrustScoreType?, pageable: Pageable): Page<TrustScoreResponse> {
         val page = if (type != null) {
-            trustScoreRepository.findByToUserIdAndType(userId, type, pageable)
+            trustScoreRepository.findAllByToUserIdAndType(userId, type, pageable)
         } else {
-            trustScoreRepository.findByToUserId(userId, pageable)
+            trustScoreRepository.findAllByToUserId(userId, pageable)
         }
 
         return page.map {
@@ -36,23 +37,25 @@ class TrustScoreService(
         }
     }
 
+
     fun getUserScores(userIds: List<Long>): Map<Long, Double> {
         val stats = trustScoreRepository.getScoreStatsForUsers(userIds)
 
         val result = mutableMapOf<Long, Double>()
         stats.forEach {
-            val score = if (it.getTotalCount() > 0) {
-                (it.getPositiveCount().toDouble() / it.getTotalCount()) * 100.0
-            } else {
-                50.0
-            }
-            result[it.getUserId()] = String.format("%.1f", score).toDouble()
+            val base = 50.0
+            val score = base + it.getPositiveCount() - (it.getTotalCount() - it.getPositiveCount())
+            result[it.getUserId()] = score.coerceIn(0.0, 100.0)
         }
 
-        userIds.forEach { if (!result.containsKey(it)) result[it] = 50.0 }
+        // 평가 없으면 기본값 50점
+        userIds.forEach {
+            if (!result.containsKey(it)) result[it] = 50.0
+        }
 
         return result
     }
+
 
     @Transactional
     fun submitScore(fromUserId: Long, toUserId: Long, dealId: Long, isPositive: Boolean, comment: String?) {

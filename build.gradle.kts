@@ -21,6 +21,9 @@ repositories {
 }
 
 dependencies {
+    implementation("net.coobird:thumbnailator:0.4.20") // Thumbnailator
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.9.4") // TwelveMonkeys - WebP 지원
+    implementation("com.twelvemonkeys.imageio:imageio-core:3.9.4") // TwelveMonkeys - WebP 지원
     implementation("io.github.cdimascio:java-dotenv:5.2.2")
     implementation("software.amazon.awssdk:s3:2.20.89") // 최신 AWS SDK v2
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -37,7 +40,6 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5") // or :jjwt-gson
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.22.0")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("com.google.firebase:firebase-admin:9.2.0") // 버전은 필요 시 최신으로
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")

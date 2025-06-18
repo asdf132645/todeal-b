@@ -18,7 +18,11 @@ data class DealDto(
     val longitude: Double,
     val images: List<String>,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val translatedTitle: String?,
+    val translatedContent: String?,
+    val language: String?
+
 ) {
     companion object {
         fun from(entity: DealEntity): DealDto {
@@ -38,7 +42,10 @@ data class DealDto(
                 longitude = entity.longitude,
                 images = entity.images,
                 createdAt = entity.createdAt.toString(),
-                updatedAt = entity.updatedAt.toString()
+                updatedAt = entity.updatedAt.toString(),
+                translatedTitle = entity.translatedTitle,
+                translatedContent = entity.translatedContent,
+                language = entity.language
             )
         }
     }
