@@ -8,6 +8,7 @@ import com.todeal.global.response.ApiResponse
 import org.springframework.web.bind.annotation.*
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.getByIdOrThrow
+import org.springframework.data.domain.Page
 import java.time.ZoneId
 
 @RestController
@@ -84,9 +85,13 @@ class DealController(
 
     /** 내가 등록한 딜 목록 조회 */
     @GetMapping("/mine")
-    fun getMyDeals(@RequestHeader("X-USER-ID") userId: Long): ApiResponse<List<DealResponse>> {
-        val deals = dealService.getDealsByUserId(userId)
-        return ApiResponse.success(deals)
+    fun getMyDeals(
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ApiResponse<Page<DealResponse>> {
+        val result = dealService.getDealsByUserId(userId, page, size)
+        return ApiResponse.success(result)
     }
 
     /** 제목과 타입을 기반으로 딜 검색 (+ 제외 키워드) */

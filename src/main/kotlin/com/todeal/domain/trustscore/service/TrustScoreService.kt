@@ -39,7 +39,7 @@ class TrustScoreService(
 
 
     fun getUserScores(userIds: List<Long>): Map<Long, Double> {
-        val stats = trustScoreRepository.getScoreStatsForUsers(userIds)
+        val stats = trustScoreRepository.fetchScoreStatsByToUserIds(userIds)
 
         val result = mutableMapOf<Long, Double>()
         stats.forEach {

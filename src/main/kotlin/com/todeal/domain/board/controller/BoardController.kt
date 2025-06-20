@@ -4,8 +4,12 @@ package com.todeal.domain.board.controller
 import com.todeal.domain.board.dto.*
 import com.todeal.domain.board.service.BoardService
 import com.todeal.global.response.ApiResponse
+import com.todeal.global.response.CursorResponse
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/board")
@@ -19,12 +23,21 @@ class BoardController(
         @RequestParam(required = false) distance: Double?,
         @RequestParam(required = false) category: String?,
         @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) field: String? // "title" | "content" | "nickname"
-    ): ApiResponse<List<BoardPostResponse>> {
+        @RequestParam(required = false) field: String?,
+        @RequestParam(required = false) cursorCreatedAt: String?,
+        @RequestParam(required = false) cursorId: Long?,
+        @RequestParam(required = false, defaultValue = "20") size: Int
+    ): ApiResponse<CursorResponse<BoardPostResponse>> {
+        val parsedCreatedAt = cursorCreatedAt?.let { LocalDateTime.parse(it) }
+
         return ApiResponse.success(
-            boardService.getPosts(latitude, longitude, distance, category, keyword, field)
+            boardService.getPosts(
+                latitude, longitude, distance, category, keyword, field,
+                parsedCreatedAt, cursorId, size
+            )
         )
     }
+
 
     @GetMapping("/{id}")
     fun getPost(
@@ -80,8 +93,11 @@ class BoardController(
 
     @GetMapping("/mine")
     fun getMyPosts(
-        @RequestHeader("X-USER-ID") userId: Long
-    ): ApiResponse<List<BoardPostResponse>> {
-        return ApiResponse.success(boardService.getMyPosts(userId))
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ApiResponse<Page<BoardPostResponse>> {
+        val result = boardService.getMyPosts(userId, page, size)
+        return ApiResponse.success(result)
     }
 }

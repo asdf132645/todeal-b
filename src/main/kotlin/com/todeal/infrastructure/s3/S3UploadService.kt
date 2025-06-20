@@ -47,4 +47,15 @@ class S3UploadService(
         val fileName = imageUrl.substringAfterLast("/")  // S3 경로에서 파일명 추출
         amazonS3.deleteObject(bucket, fileName)
     }
+
+    fun deleteAll(imageUrls: List<String>) {
+        if (imageUrls.isEmpty()) return
+
+        val keys = imageUrls.map { it.substringAfterLast("/") }
+        val deleteObjects = com.amazonaws.services.s3.model.DeleteObjectsRequest(bucket)
+            .withKeys(*keys.toTypedArray())
+
+        amazonS3.deleteObjects(deleteObjects)
+    }
+
 }

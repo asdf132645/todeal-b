@@ -4,7 +4,6 @@ import com.todeal.domain.hashtag.entity.HashtagEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.awt.print.Pageable
 
 interface HashtagRepository : JpaRepository<HashtagEntity, Long> {
     fun findByName(name: String): HashtagEntity?

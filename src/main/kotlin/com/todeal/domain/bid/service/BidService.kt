@@ -10,6 +10,7 @@ import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.mapper.toServiceDto
 import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.getByIdOrThrow
+import com.todeal.domain.trustscore.repository.TrustScoreRepository
 import com.todeal.domain.user.repository.UserRepository
 import org.springframework.data.domain.*
 import org.springframework.data.redis.core.RedisTemplate
@@ -23,22 +24,30 @@ class BidService(
     private val barterBidRepository: BarterBidRepository,
     private val userRepository: UserRepository,
     private val dealRepository: DealRepository,
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val trustScoreRepository: TrustScoreRepository
 ) {
 
     private val objectMapper = jacksonObjectMapper()
 
-    fun getBidsByDealId(dealId: Long): List<BidResponse> {
+    fun getBidsByDealId(dealId: Long, currentUserId: Long): List<BidResponse> {
         val deal = dealRepository.getByIdOrThrow(dealId)
         val bids = bidRepository.findByDealId(dealId)
         val userIds = bids.map { it.userId }.toSet()
         val userMap = userRepository.findByIdIn(userIds).associateBy { it.id }
 
+        // ✅ 평가 여부 조회
+        val trustScores = trustScoreRepository
+            .findByFromUserIdAndDealId(currentUserId, listOf(dealId))
+            .associateBy { it.toUserId }
+
         return bids.map {
             val nickname = userMap[it.userId]?.nickname ?: "알 수 없음"
-            BidResponse.fromEntity(it, nickname, deal.winnerBidId)
+            val evaluated = trustScores.containsKey(it.userId)
+            BidResponse.fromEntity(it, nickname, deal.winnerBidId, evaluated)
         }
     }
+
 
     @Transactional
     fun selectWinnerBid(bidId: Long) {
@@ -145,15 +154,21 @@ class BidService(
         val userIds = bids.map { it.userId }.toSet()
         val userMap = userRepository.findByIdIn(userIds).associateBy { it.id }
 
+        val trustScores = trustScoreRepository
+            .findByFromUserIdAndDealId(userId, dealIds)
+            .associateBy { "${it.toUserId}_${it.dealId}" }
+
         // ✅ 딜 기준으로 그룹핑
         val grouped = myDealsPage.content.map { deal ->
             val bidsOnDeal = bids.filter { it.dealId == deal.id }
             DealBidGroupDto(
                 deal = deal.toDto(),
-                bids = bidsOnDeal.map { bid ->
+                bidsOnDeal.map { bid ->
                     val nickname = userMap[bid.userId]?.nickname ?: "알 수 없음"
-                    BidResponse.fromEntity(bid, nickname, deal.winnerBidId)
+                    val evaluated = trustScores.containsKey("${bid.userId}_${bid.dealId}")
+                    BidResponse.fromEntity(bid, nickname, deal.winnerBidId, evaluated)
                 }
+
             )
         }
 

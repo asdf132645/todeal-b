@@ -8,8 +8,13 @@ import com.todeal.domain.deal.repository.DealRepository
 import com.todeal.domain.deal.repository.DealQueryRepository
 import com.todeal.domain.deal.mapper.toDto
 import com.todeal.domain.deal.repository.getByIdOrThrow
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+
 import com.todeal.global.response.ApiResponse
+import com.todeal.infrastructure.s3.S3UploadService
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -18,7 +23,8 @@ class DealService(
     private val dealRepository: DealRepository,
     private val dealQueryRepository: DealQueryRepository,
     private val chatRoomRepository: ChatRoomRepository,
-    private val chatMessageRepository: ChatMessageRepository
+    private val chatMessageRepository: ChatMessageRepository,
+    private val s3UploadService: S3UploadService,
 ) {
 
     fun createDeal(userId: Long, request: DealRequest): DealDto {
@@ -152,19 +158,27 @@ class DealService(
 
         if (deal.userId != userId) throw IllegalAccessException("삭제 권한이 없습니다")
 
+        // ✅ 1. S3 이미지 삭제
+        if (deal.images.isNotEmpty()) {
+            s3UploadService.deleteAll(deal.images)
+        }
+
+        // ✅ 2. 관련 채팅 삭제
         val chatRooms = chatRoomRepository.findAllByDealId(dealId)
         chatRooms.forEach { room ->
             chatMessageRepository.deleteByChatRoomId(room.id)
         }
         chatRoomRepository.deleteAll(chatRooms)
 
+        // ✅ 3. 딜 삭제
         dealRepository.delete(deal)
     }
 
-    fun getDealsByUserId(userId: Long): List<DealResponse> {
-        val results = dealRepository.findByUserId(userId)
-        return results.map { it.toDto() }
+    fun getDealsByUserId(userId: Long, page: Int, size: Int): Page<DealResponse> {
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        return dealRepository.findByUserId(userId, pageable).map { it.toDto() }
     }
+
 
     @Transactional
     fun updateDeal(userId: Long, dealId: Long, request: DealRequest): DealDto {

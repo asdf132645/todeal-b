@@ -16,10 +16,14 @@ class BidController(
 ) {
 
     @GetMapping
-    fun getBidsByDealId(@RequestParam dealId: Long): ApiResponse<List<BidResponse>> {
-        val bids = bidService.getBidsByDealId(dealId)
+    fun getBidsByDealId(
+        @RequestParam dealId: Long,
+        @RequestHeader("X-USER-ID") currentUserId: Long
+    ): ApiResponse<List<BidResponse>> {
+        val bids = bidService.getBidsByDealId(dealId, currentUserId)
         return ApiResponse.success(bids)
     }
+
 
     @PostMapping("/{id}/select-winner")
     fun selectWinner(@PathVariable id: Long): ApiResponse<String> {
