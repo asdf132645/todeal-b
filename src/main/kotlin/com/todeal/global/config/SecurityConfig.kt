@@ -36,6 +36,7 @@ class SecurityConfig(
                     .requestMatchers(
                         "/ws/**",
                         "/api/users/signup",
+                        "/api/analytics/**",
                         "/api/emailVerification/send-verification",
                         "/api/emailVerification/verify-code",
                         "/api/emailVerification/check-email",
